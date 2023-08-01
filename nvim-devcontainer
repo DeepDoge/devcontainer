@@ -176,6 +176,8 @@ if [ -z "$CONTAINER_ID" ]; then
                 echo \"[INFO] Executing postCreateCommand...\" ;
                 $CONFIG_POST_CREATE_COMMAND
             fi
+
+            tail -f /dev/null
         "
     if [[ $? -ne 0 ]]; then
         print_error "Creating the container failed."
