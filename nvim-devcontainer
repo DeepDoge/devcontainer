@@ -18,21 +18,21 @@ nvimTarGzLink="https://github.com/neovim/neovim/releases/latest/download/nvim-li
 configPath="${homeDirectory}/.config/@deepdoge/devcontainer"
 
 if [[ ! -f "${devContainerJsonPaths[0]}" && ! -f "${devContainerJsonPaths[1]}" ]]; then
-    echo -e "${RED}No devcontainer.json found.${NC}"
+    echo -e "[${RED}ERROR${NC}] No devcontainer.json found."
     exit 1
 fi
 
 devContainerJson=""
 for path in "${devContainerJsonPaths[@]}"; do
     if [[ -f "${path}" ]]; then
-        echo -e "${GREEN}Found devcontainer.json at \"${path}\".${NC}"
+        echo -e "[${GREEN}INFO${NC}] Found devcontainer.json at \"${path}\"."
         devContainerJson=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "${path}")
         break
     fi
 done
 
 if [[ -z "${devContainerJson}" ]]; then
-    echo -e "${RED}No valid devcontainer.json found.${NC}"
+    echo -e "[${RED}ERROR${NC}] No valid devcontainer.json found."
     exit 1
 fi
 
@@ -43,33 +43,33 @@ devContainerJsonDir=$(dirname "${path}")
 buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
 
 if [[ -n "${buildDockerfile}" ]]; then
-    echo -e "${GREEN}Building Docker image using ${buildDockerfile}...${NC}"
+    echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
     docker build -t "${projectName}" -f "${devContainerJsonDir}/${buildDockerfile}" "${devContainerJsonDir}"
     image="${projectName}"
 
     if [[ $? -ne 0 ]]; then
-        echo -e "${RED}Docker build failed.${NC}"
+        echo -e "[${RED}ERROR${NC}] Docker build failed."
         exit 1
     fi
 
 else
     image=$(echo "${devContainerJson}" | jq -r '.image')
     if [[ -z "${image}" ]]; then
-        echo -e "${RED}No image specified in devcontainer.json.${NC}"
+        echo -e "[${RED}ERROR${NC}] No image specified in devcontainer.json."
         exit 1
     fi
 
-    echo -e "${GREEN}Pulling Docker image \"${image}\"...${NC}"
+    echo -e "[${GREEN}INFO${NC}] Pulling Docker image \"${image}\"..."
     docker pull "${image}"
 
     if [[ $? -ne 0 ]]; then
-        echo -e "${RED}Docker pull failed.${NC}"
+        echo -e "[${RED}ERROR${NC}] Docker pull failed."
         exit 1
     fi
 fi
 
 # Build, Run, and Install NeoVim to the container.
-echo -e "${GREEN}Building and running \"${image}\" container for \"${projectName}\" project.${NC}"
+echo -e "[${GREEN}INFO${NC}] Building and running \"${image}\" container for \"${projectName}\" project."
 
 docker run -w "/workspaces/${projectName}" \
     -v "${currentDirectory}:/workspaces/${projectName}" \
