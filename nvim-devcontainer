@@ -47,7 +47,7 @@ read_devcontainer_json() {
 
 # Function to get a value from devcontainer.json or devcontainer.metadata
 get_config_value() {
-    local key="$3"
+    local key="$1"
 
     local value=$(echo "$DEVCONTAINER_JSON" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
