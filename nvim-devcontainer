@@ -92,7 +92,7 @@ startCommand="
     fi
 
     # Start NeoVim with all arguments
-    ~/.local/bin/nvim ${@}
+    ~/.local/bin/nvim
 "
 
 # Check if the container exists for the project
