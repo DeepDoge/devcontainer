@@ -92,7 +92,7 @@ if [ -z "$container_id" ]; then
         -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
         -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
         -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
-        -it --rm --label "projectPath=${projectPath}" "${image}" bash -c "
+        -it ${container_id} --rm --label "projectPath=${projectPath}" "${image}" bash -c "
             # Check if NeoVim is already installed in the container
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 # If not installed, download and extract NeoVim binary
