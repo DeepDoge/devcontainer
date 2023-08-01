@@ -99,7 +99,9 @@ if [ -z "$container_id" ]; then
         -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
         -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
         -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
-        -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -v ~/.gitconfig:/etc/gitconfig \
+        -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -e DISPLAY=$DISPLAY \
         -it --label "nvim-devcontainer-${projectPath}" "${image}" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
