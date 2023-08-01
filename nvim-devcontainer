@@ -72,7 +72,7 @@ pull_docker_image() {
     docker pull "$image"
 
     if [[ $? -ne 0 ]]; then
-        print_error "Docker pull failed."
+        print_error "Pulling Docker image failed."
         exit 1
     fi
 }
@@ -103,7 +103,7 @@ if [[ -n "$DOCKERFILE" ]]; then
     docker build -t "$IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
 
     if [[ $? -ne 0 ]]; then
-        print_error "Docker build failed."
+        print_error "Building Docker image failed."
         exit 1
     fi
 else
@@ -179,15 +179,27 @@ if [ -z "$CONTAINER_ID" ]; then
 
             $START_COMMAND
         "
+    if [[ $? -ne 0 ]]; then
+        print_error "Creating the container failed."
+        exit 1
+    fi
 
     CONTAINER_ID=$(docker ps -aq -f "label=projectPath=$PROJECT_PATH")
 else
     if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; then
         print_info "Starting container \"$CONTAINER_ID\"..."
         docker start "$CONTAINER_ID"
+        if [[ $? -ne 0 ]]; then
+            print_error "Starting the container failed."
+            exit 1
+        fi
     fi
     print_info "Attaching to the container \"$CONTAINER_ID\" project..."
     docker exec -it "$CONTAINER_ID" bash -c "
         $START_COMMAND
     "
+    if [[ $? -ne 0 ]]; then
+        print_error "Attaching to the container failed."
+        exit 1
+    fi
 fi
