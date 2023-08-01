@@ -92,7 +92,7 @@ startCommand="
     fi
 
     # Start NeoVim and enter the container's bash shell
-    ~/.local/bin/nvim ; bash
+    ~/.local/bin/nvim
 "
 
 # Check if the container exists for the project
@@ -155,8 +155,8 @@ fi
 # Check if the container is running
 if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "true" ]; then
     # Check if there are any attached processes
-    if [[ $(docker exec "${container_id}" ps -ef | wc -l) -eq 1 ]]; then
-        echo "No processes attached to the container. Stopping..."
+    if [[ $(docker exec "${container_id}" sh -c 'pgrep -c nvim') -eq 0 ]]; then
+        echo "[${GREEN}INFO${NC}] No attached processes found. Stopping and removing container..."
         docker stop "${container_id}"
         docker rm "${container_id}"
     fi
