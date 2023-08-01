@@ -166,7 +166,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
-        -u "$CONFIG_REMOTE_USER":1000 \
+        -u "$CONFIG_REMOTE_USER":1024 \
         -it --label "nvim-devcontainer-$PROJECT_PATH" "$CONFIG_IMAGE" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
