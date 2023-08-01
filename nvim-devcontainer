@@ -90,20 +90,6 @@ startCommand="
 
     # Start NeoVim and enter the container's bash shell
     ~/.local/bin/nvim ; bash
-
-    # Check if the container is running
-    if docker inspect -f '{{.State.Running}}' \"${container_id}\" 2>/dev/null; then
-        # Check if there are any attached processes
-        if [[ $(docker exec \"${container_id}\" ps -ef | wc -l) -eq 1 ]]; then
-            echo \"No processes attached to the container. Stopping...\"
-            docker stop \"${container_id}\"
-            docker rm \"${container_id}\"
-        else
-            echo \"Processes are still attached to the container.\"
-        fi
-    else
-        echo \"Container with ID ${container_id} is not running or doesn't exist.\"
-    fi
 "
 
 # Check if the container exists for the project
@@ -154,10 +140,24 @@ if [ -z "$container_id" ]; then
 else
     # Attach to the container and run NeoVim and bash
     echo -e "[${GREEN}INFO${NC}] Attaching to the container \"${container_id}\" project..."
-    if ! docker inspect -f '{{.State.Running}}' "${container_id}" 2>/dev/null; then
+    if $(docker inspect -f '{{.State.Running}}' "${container_id}") == "false"; then
         docker start "${container_id}"
     fi
     docker exec -it "${container_id}" bash -c "
         ${startCommand}    
     "
+fi
+
+# Check if the container is running
+if $(docker inspect -f '{{.State.Running}}' "${container_id}") == "true"; then
+    # Check if there are any attached processes
+    if [[ $(docker exec "${container_id}" ps -ef | wc -l) -eq 1 ]]; then
+        echo "No processes attached to the container. Stopping..."
+        docker stop "${container_id}"
+        docker rm "${container_id}"
+    else
+        echo "Processes are still attached to the container."
+    fi
+else
+    echo "Container with ID ${container_id} is not running or doesn't exist."
 fi
