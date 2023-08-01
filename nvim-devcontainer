@@ -96,7 +96,7 @@ startCommand="
 "
 
 # Check if the container exists for the project
-container_id=$(docker ps -aq -f "label=projectPath=${projectPath}")
+container_id=$(docker ps -aq -f "label=nvim-devcontainer-projectPath=${projectPath}")
 
 if [ -z "$container_id" ]; then
     # The container doesn't exist, so we need to create and run it
@@ -110,7 +110,7 @@ if [ -z "$container_id" ]; then
         -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
         -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
         -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
-        -it --label "projectPath=${projectPath}" "${image}" bash -c "
+        -it --label "nvim-devcontainer-projectPath=${projectPath}" "${image}" bash -c "
             # Check if NeoVim is already installed in the container
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 # If not installed, download and extract NeoVim binary
