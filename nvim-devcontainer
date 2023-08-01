@@ -114,7 +114,7 @@ docker run -w "/workspaces/${projectName}" \
                 ${postCreateCommand} ; # Because we create the container everytime, we run postCreateCommand everytime for now.
             fi
 
-            # Execute postStartCommand after container is created
+            # Execute postStartCommand after container is started
             if [ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]; then
                 ${postStartCommand}
             fi
