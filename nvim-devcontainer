@@ -33,7 +33,8 @@ find_devcontainer_json() {
 
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]]; then
-            return "$path"
+            __R__="$path"
+            return
         fi
     done
 }
@@ -52,15 +53,17 @@ get_config_value() {
 
     local value=$(echo "$devcontainer_json" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
-        return "$value"
+        __R__="$value"
+        return
     fi
 
     local metadata_value=$(echo "$image_devcontainer_metadata" | jq -r ".[] | select(.${key} != null) | .${key}")
     if [[ "$metadata_value" != "" && "$metadata_value" != "null" ]]; then
-        return "$metadata_value"
+        __R__="$metadata_value"
+        return
     fi
 
-    return ""
+    __R__=""
 }
 
 # Function to build the Docker image
@@ -81,7 +84,7 @@ build_docker_image() {
         exit 1
     fi
 
-    return "$image"
+    __R__="$image"
 }
 
 # Function to pull the Docker image
@@ -99,7 +102,7 @@ pull_docker_image() {
 
 # Main script
 find_devcontainer_json
-DEVCONTAINER_JSON_PATH=$?
+DEVCONTAINER_JSON_PATH=$$__R__
 
 if [[ ! -f "$DEVCONTAINER_JSON_PATH" ]]; then
     print_error "No devcontainer.json found."
@@ -115,20 +118,20 @@ fi
 IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$image")
 
 get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'build.dockerfile'
-BUILD_DOCKERFILE=$?
+BUILD_DOCKERFILE=$$__R__
 get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postStartCommand'
-POST_START_COMMAND=$?
+POST_START_COMMAND=$$__R__
 get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postCreateCommand'
-POST_CREATE_COMMAND=$?
+POST_CREATE_COMMAND=$$__R__
 
 if [[ -n "$BUILD_DOCKERFILE" && "$BUILD_DOCKERFILE" != "null" ]]; then
     DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
 
     build_docker_image "$DEVCONTAINER_JSON_DIR" "$BUILD_DOCKERFILE" "$PROJECT_NAME"
-    IMAGE=$?
+    IMAGE=$$__R__
 else
     get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image'
-    IMAGE=$?
+    IMAGE=$$__R__
     if [[ -z "$IMAGE" || "$IMAGE" == "null" ]]; then
         print_error "No image specified in devcontainer.json."
         exit 1
