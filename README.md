@@ -1,6 +1,6 @@
 # nvim-devcontainer
 
-`nvim-devcontainer` is a tool that allows you to build and run Docker containers with a NeoVim development environment based on a `devcontainer.json` file in your project. It provides an isolated NeoVim environment that can be shared between different projects, similar to the experience of [VSCode Dev Containers](https://code.visualstudio.com/docs/remote/containers). This new version of `nvim-devcontainer` brings several improvements and changes to its usage and functionality.
+`nvim-devcontainer` is a tool that allows you to build and run Docker containers with a NeoVim development environment based on a `devcontainer.json` file in your project. It provides an isolated NeoVim environment that can be shared between different projects, similar to the experience of [VSCode Dev Containers](https://code.visualstudio.com/docs/remote/containers).
 
 ## Note
 
