@@ -157,7 +157,7 @@ if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "true" ]; 
     # Check if there are any attached processes
     if [[ $(docker exec "${container_id}" sh -c 'pgrep -c nvim') -eq 0 ]]; then
         echo "[${GREEN}INFO${NC}] No attached processes found. Stopping and removing container..."
-        docker stop "${container_id}"
-        docker rm "${container_id}"
+        docker stop ${container_id}
+        docker rm ${container_id}
     fi
 fi
