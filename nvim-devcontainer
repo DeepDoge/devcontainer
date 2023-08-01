@@ -110,10 +110,14 @@ docker run -w "/workspaces/${projectName}" \
             cd \"/workspaces/${projectName}\" &&
 
             # Execute postCreateCommand after container is created
-            ${postCreateCommand} ; # Because we create the container everytime, we run postCreateCommand everytime for now.
+            if [ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]; then
+                ${postCreateCommand} ; # Because we create the container everytime, we run postCreateCommand everytime for now.
+            fi
 
             # Execute postStartCommand after container is created
-            ${postStartCommand} ;
+            if [ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]; then
+                ${postStartCommand}
+            fi
 
             # Start NeoVim and enter the container's bash shell
             ~/.local/bin/nvim ; bash
