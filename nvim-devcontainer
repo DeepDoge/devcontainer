@@ -1,0 +1,98 @@
+#!/bin/bash
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
+
+projectName=$(basename "$(pwd)")
+
+devContainerJsonPaths=(
+    "$(pwd)/devcontainer.json"
+    "$(pwd)/.devcontainer/devcontainer.json"
+)
+
+homeDirectory="${HOME}"
+currentDirectory="$(pwd)"
+nvimTarGzLink="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+configPath="${homeDirectory}/.config/@deepdoge/devcontainer"
+
+if [[ ! -f "${devContainerJsonPaths[0]}" && ! -f "${devContainerJsonPaths[1]}" ]]; then
+    echo -e "${RED}No devcontainer.json found.${NC}"
+    exit 1
+fi
+
+devContainerJson=""
+for path in "${devContainerJsonPaths[@]}"; do
+    if [[ -f "${path}" ]]; then
+        echo -e "${GREEN}Found devcontainer.json at \"${path}\".${NC}"
+        devContainerJson=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "${path}")
+        break
+    fi
+done
+
+if [[ -z "${devContainerJson}" ]]; then
+    echo -e "${RED}No valid devcontainer.json found.${NC}"
+    exit 1
+fi
+
+# Get the directory where devcontainer.json is located
+devContainerJsonDir=$(dirname "${path}")
+
+# Extract build properties from the JSON using jq
+buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
+
+if [[ -n "${buildDockerfile}" ]]; then
+    echo -e "${GREEN}Building Docker image using ${buildDockerfile}...${NC}"
+    docker build -t "${projectName}" -f "${devContainerJsonDir}/${buildDockerfile}" "${devContainerJsonDir}"
+    image="${projectName}"
+
+    if [[ $? -ne 0 ]]; then
+        echo -e "${RED}Docker build failed.${NC}"
+        exit 1
+    fi
+
+else
+    image=$(echo "${devContainerJson}" | jq -r '.image')
+    if [[ -z "${image}" ]]; then
+        echo -e "${RED}No image specified in devcontainer.json.${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}Pulling Docker image \"${image}\"...${NC}"
+    docker pull "${image}"
+
+    if [[ $? -ne 0 ]]; then
+        echo -e "${RED}Docker pull failed.${NC}"
+        exit 1
+    fi
+fi
+
+# Build, Run, and Install NeoVim to the container.
+echo -e "${GREEN}Building and running \"${image}\" container for \"${projectName}\" project.${NC}"
+
+docker run -w "/workspaces/${projectName}" \
+    -v "${currentDirectory}:/workspaces/${projectName}" \
+    -v "${configPath}/nvim/config:/root/.config/nvim" \
+    -v "${configPath}/nvim/cache:/root/.cache/nvim" \
+    -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
+    -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
+    -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
+    -it --rm "${image}" \
+    bash -c "
+            if [ ! -d ~/.local/share/nvim-linux64 ]; then
+                cd /tmp &&
+                curl -LO ${nvimTarGzLink} &&
+                tar xzf nvim-linux64.tar.gz &&
+                mkdir -p ~/.local/share &&
+                mv ./nvim-linux64 ~/.local/share
+            fi
+            
+            chmod +x ~/.local/share/nvim-linux64/bin/nvim &&
+            mkdir -p ~/.local/bin
+            cd ~/.local/bin/ &&
+            ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim
+            cd \"/workspaces/${projectName}\" &&
+
+            ~/.local/bin/nvim ; bash
+        "
