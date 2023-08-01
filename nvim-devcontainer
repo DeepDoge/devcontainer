@@ -151,13 +151,13 @@ if [ -z "$container_id" ]; then
 
             ${startCommand}
         "
+else
+    # Attach to the container and run NeoVim and bash
+    echo -e "[${GREEN}INFO${NC}] Attaching to the container \"${container_id}\" project..."
+    if ! docker inspect -f '{{.State.Running}}' "${container_id}" 2>/dev/null; then
+        docker start "${container_id}"
+    fi
+    docker exec -it "${container_id}" bash -c "
+        ${startCommand}    
+    "
 fi
-
-# Attach to the container and run NeoVim and bash
-echo -e "[${GREEN}INFO${NC}] Attaching to the container for \"${projectPath}\" project..."
-if ! docker inspect -f '{{.State.Running}}' "${container_id}" 2>/dev/null; then
-    docker start "${container_id}"
-fi
-docker exec -it "${container_id}" bash -c "
-    ${startCommand}    
-"
