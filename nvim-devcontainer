@@ -92,7 +92,7 @@ container_id=$(docker ps -aq -f "label=nvim-devcontainer-${projectPath}")
 if [ -z "$container_id" ]; then
     echo -e "[${GREEN}INFO${NC}] Creating container for \"${projectPath}\" project..."
 
-    docker run -w "/workspaces/${projectName}" \
+    docker run --net=host -w "/workspaces/${projectName}" \
         -v "${projectPath}:/workspaces/${projectName}" \
         -v "${configPath}/nvim/config:/root/.config/nvim" \
         -v "${configPath}/nvim/cache:/root/.cache/nvim" \
