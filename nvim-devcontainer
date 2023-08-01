@@ -79,6 +79,9 @@ fi
 
 # Script to be executed after attaching to the container
 startCommand="
+    # Change directory to the workspace
+    cd \"/workspaces/${projectName}\" &&
+
     # Execute postStartCommand after container is started
     if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
         echo ""
@@ -104,7 +107,7 @@ startCommand="
 "
 
 # Check if the container exists for the project
-container_id=$(docker ps -aq -f "ancestor=${image}" -f "label=projectPath=${projectPath}")
+container_id=$(docker ps -aq -f "label=projectPath=${projectPath}")
 
 if [ -z "$container_id" ]; then
     # The container doesn't exist, so we need to create and run it
