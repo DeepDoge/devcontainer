@@ -87,7 +87,7 @@ docker run -w "/workspaces/${projectName}" \
                 curl -LO ${nvimTarGzLink} &&
                 tar xzf nvim-linux64.tar.gz &&
                 mkdir -p ~/.local/share &&
-                mv ./nvim-linux64 ~/.local/share
+                mv ./nvim-linux64/* ~/.local/share/nvim-linux64/
             fi
             
             chmod +x ~/.local/share/nvim-linux64/bin/nvim &&
