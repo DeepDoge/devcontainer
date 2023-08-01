@@ -45,7 +45,8 @@ buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
 if [[ -n "${buildDockerfile}" ]]; then
     echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
     dockerFilePath="${devContainerJsonDir}/${buildDockerfile}"
-    image="nvim-devcontainer--${projectName}--$(echo $dockerFilePath | sed 's/\//-/g' | sed 's/^-//g' | sed 's/-*$//g' | sed 's/\./-/g' | sed 's/--/-/g' | sed 's/-*$//g' | tr '[:upper:]' '[:lower:]')"
+    dockerFileHash=$(sha256sum "${dockerFilePath}" | awk '{print $1}')
+    image="nvim-devcontainer--${projectName}--${dockerFileHash}"
     docker build -t "${image}" -f "${dockerFilePath}" "${devContainerJsonDir}"
 
     if [[ $? -ne 0 ]]; then
