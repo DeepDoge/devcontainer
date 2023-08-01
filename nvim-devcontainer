@@ -177,7 +177,7 @@ if [ -z "$CONTAINER_ID" ]; then
                 $CONFIG_POST_CREATE_COMMAND
             fi
 
-            tail -f /dev/null
+            bash
         "
     if [[ $? -ne 0 ]]; then
         print_error "Creating the container failed."
