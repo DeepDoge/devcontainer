@@ -77,6 +77,18 @@ else
     fi
 fi
 
+# Script to be executed after attaching to the container
+startCommand="
+    # Execute postStartCommand after container is started
+    if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
+        echo ""
+        ${postStartCommand}
+    fi
+
+    # Start NeoVim and enter the container's bash shell
+    ~/.local/bin/nvim ; bash
+"
+
 # Check if the container exists for the project
 container_id=$(docker ps -aq -f "ancestor=${image}" -f "label=projectPath=${projectPath}")
 
@@ -120,20 +132,12 @@ if [ -z "$container_id" ]; then
                 ${postCreateCommand}
             fi
 
-            # Keep the container running by using 'tail -f'
-            tail -f /dev/null
+            ${startCommand}
         "
 fi
 
 # Attach to the container and run NeoVim and bash
 echo -e "[${GREEN}INFO${NC}] Attaching to the container for \"${projectPath}\" project..."
 docker exec -it "$container_id" bash -c "
-    # Execute postStartCommand after container is started
-    if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
-        echo ""
-        ${postStartCommand}
-    fi
-
-    # Start NeoVim and enter the container's bash shell
-    ~/.local/bin/nvim ; bash
+    ${startCommand}    
 "
