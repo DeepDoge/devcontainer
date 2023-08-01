@@ -116,7 +116,7 @@ if [ -z "$container_id" ]; then
 
             # Execute postCreateCommand after container is created
             if [[ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]]; then
-                ${postCreateCommand} ; # Because we create the container everytime, we run postCreateCommand everytime for now.
+                ${postCreateCommand}
             fi
         "
 else
