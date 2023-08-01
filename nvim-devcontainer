@@ -4,10 +4,6 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-GREEN_='\\033[0;32m'
-RED_='\\033[0;31m'
-NC_='\\033[0m'
-
 projectPath=$(realpath "$(pwd)")
 projectName=$(basename "${projectPath}")
 
@@ -84,7 +80,7 @@ startCommand="
     cd \"/workspaces/${projectName}\" &&
 
     if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
-        echo \"[${GREEN_}INFO${NC_}] Executing postStartCommand...\"
+        echo \"[INFO] Executing postStartCommand...\"
         ${postStartCommand}
     fi
 
@@ -121,7 +117,7 @@ if [ -z "$container_id" ]; then
             cd \"/workspaces/${projectName}\" &&
 
             if [[ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]]; then
-                echo \"[${GREEN_}INFO${NC_}] Executing postCreateCommand...\" ;
+                echo \"[INFO] Executing postCreateCommand...\" ;
                 ${postCreateCommand}
             fi
 
