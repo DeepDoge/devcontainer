@@ -44,8 +44,9 @@ buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
 
 if [[ -n "${buildDockerfile}" ]]; then
     echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
-    docker build -t "${projectName}" -f "${devContainerJsonDir}/${buildDockerfile}" "${devContainerJsonDir}"
-    image="${projectName}"
+    dockerFilePath="${devContainerJsonDir}/${buildDockerfile}"
+    image="nvim-devcontainer-${projectName}-${dockerFilePath}"
+    docker build -t "${image}" -f "${dockerFilePath}" "${devContainerJsonDir}"
 
     if [[ $? -ne 0 ]]; then
         echo -e "[${RED}ERROR${NC}] Docker build failed."
@@ -69,7 +70,7 @@ else
 fi
 
 # Build, Run, and Install NeoVim to the container.
-echo -e "[${GREEN}INFO${NC}] Building and running \"${image}\" container for \"${projectName}\" project."
+echo -e "[${GREEN}INFO${NC}] Building \"${image}\" image and running container for \"${projectName}\" project."
 
 docker run -w "/workspaces/${projectName}" \
     -v "${currentDirectory}:/workspaces/${projectName}" \
