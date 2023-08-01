@@ -8,6 +8,9 @@ NC='\033[0m' # No Color
 # Get the absolute path of the current directory (project path)
 projectPath=$(realpath "$(pwd)")
 
+# Get the name of the project
+projectName=$(basename "${projectPath}")
+
 # Define paths for the NeoVim configuration in the host machine
 homeDirectory="${HOME}"
 configPath="${homeDirectory}/.config/@deepdoge/nvim-devcontainer"
@@ -100,7 +103,7 @@ if [ -z "$container_id" ]; then
     echo -e "[${GREEN}INFO${NC}] Creating container for \"${projectPath}\" project..."
 
     # Install NeoVim and create the container
-    docker run -w "/workspaces/${projectPath}" \
+    docker run -w "/workspaces/${projectName}" \
         -v "${projectPath}:/workspaces/${projectName}" \
         -v "${configPath}/nvim/config:/root/.config/nvim" \
         -v "${configPath}/nvim/cache:/root/.cache/nvim" \
