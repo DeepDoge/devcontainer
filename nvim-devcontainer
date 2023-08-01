@@ -155,7 +155,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
-        -it --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
+        --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
                 curl -LO \"$NVIM_TAR_GZ_LINK\" &&
@@ -176,8 +176,6 @@ if [ -z "$CONTAINER_ID" ]; then
                 echo \"[INFO] Executing postCreateCommand...\" ;
                 $CONFIG_POST_CREATE_COMMAND
             fi
-
-            bash
         "
     if [[ $? -ne 0 ]]; then
         print_error "Creating the container failed."
@@ -196,10 +194,10 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; t
     fi
 fi
 print_info "Attaching to the container \"$CONTAINER_ID\" project..."
-docker exec -it "$CONTAINER_ID" \
-    -u "$CONFIG_REMOTE_USER" \
+docker exec -u "$CONFIG_REMOTE_USER" \
     -e DISPLAY=$DISPLAY \
     -w "/workspaces/$PROJECT_NAME" \
+    -it "$CONTAINER_ID" \
     bash -c "
         if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
             echo \"[INFO] Executing postStartCommand...\"
