@@ -116,9 +116,12 @@ if [ -z "$container_id" ]; then
 
             # Execute postCreateCommand after container is created
             if [[ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]]; then
-                echo $postCreateCommand
+                echo ""
                 ${postCreateCommand}
             fi
+
+            # Keep the container running by using 'tail -f'
+            tail -f /dev/null
         "
 fi
 
@@ -127,7 +130,8 @@ echo -e "[${GREEN}INFO${NC}] Attaching to the container for \"${projectPath}\" p
 docker exec -it "$container_id" bash -c "
     # Execute postStartCommand after container is started
     if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
-        ${postStartCommand} ;
+        echo ""
+        ${postStartCommand}
     fi
 
     # Start NeoVim and enter the container's bash shell
