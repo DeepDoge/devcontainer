@@ -91,49 +91,55 @@ if [[ -z "$DEVCONTAINER_JSON" ]]; then
     exit 1
 fi
 
-DOCKERFILE=$(get_config_value 'build.dockerfile')
+CONFIG_DOCKERFILE=$(get_config_value 'build.dockerfile')
 
-if [[ -n "$DOCKERFILE" ]]; then
+if [[ -n "$CONFIG_DOCKERFILE" ]]; then
     DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
     
-    DOCKERFILE_PATH="$DEVCONTAINER_JSON_DIR/$DOCKERFILE"
-    IMAGE="nvim-devcontainer--$PROJECT_NAME--$(sha256sum "$DOCKERFILE_PATH" | awk '{print $1}')"
+    DOCKERFILE_PATH="$DEVCONTAINER_JSON_DIR/$CONFIG_DOCKERFILE"
+    CONFIG_IMAGE="nvim-devcontainer--$PROJECT_NAME--$(sha256sum "$DOCKERFILE_PATH" | awk '{print $1}')"
     
     print_info "Building Docker image using $DOCKERFILE_PATH..."
-    docker build -t "$IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
+    docker build -t "$CONFIG_IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
 
     if [[ $? -ne 0 ]]; then
         print_error "Building Docker image failed."
         exit 1
     fi
 else
-    IMAGE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image')
-    if [[ -z "$IMAGE" ]]; then
+    CONFIG_IMAGE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image')
+    if [[ -z "$CONFIG_IMAGE" ]]; then
         print_error "No image specified in devcontainer.json."
         exit 1
     fi
 
-    pull_docker_image "$IMAGE"
+    pull_docker_image "$CONFIG_IMAGE"
 fi
 
-print_info "Using Docker image \"$IMAGE\"..."
-IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$IMAGE")
+print_info "Using Docker image \"$CONFIG_IMAGE\"..."
+IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$CONFIG_IMAGE")
 
-POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
-POST_START_COMMAND=$(get_config_value 'postStartCommand')
-USER_UID=$(get_config_value 'remoteUser')
+CONFIG_POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
+CONFIG_POST_START_COMMAND=$(get_config_value 'postStartCommand')
+CONFIG_REMOTE_USER=$(get_config_value 'remoteUser')
 
-if [[ -z "$USER_UID" ]]; then
-    USER_UID="root"
+if [[ -z "$CONFIG_REMOTE_USER" ]]; then
+    CONFIG_REMOTE_USER="root"
+fi
+
+if [[ "$CONFIG_REMOTE_USER" == "root" ]]; then
+    CONTAINER_HOME_DIRECTORY="/root"
+else
+    CONTAINER_HOME_DIRECTORY="/home/$CONFIG_REMOTE_USER"
 fi
 
 # Start the container
 START_COMMAND="
     cd \"/workspaces/${PROJECT_NAME}\" &&
 
-    if [[ -n \"$POST_START_COMMAND\" && \"$POST_START_COMMAND\" != \"null\" ]]; then
+    if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
         echo \"[INFO] Executing postStartCommand...\"
-        $POST_START_COMMAND
+        $CONFIG_POST_START_COMMAND
     fi
 
     ~/.local/bin/nvim
@@ -146,16 +152,16 @@ if [ -z "$CONTAINER_ID" ]; then
 
     docker run --net=host -w "/workspaces/$PROJECT_NAME" \
         -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
-        -v "$CONFIG_PATH/nvim/config:/root/.config/nvim" \
-        -v "$CONFIG_PATH/nvim/cache:/root/.cache/nvim" \
-        -v "$CONFIG_PATH/nvim/local/state:/root/.local/state/nvim" \
-        -v "$CONFIG_PATH/nvim/local/share/nvim:/root/.local/share/nvim" \
-        -v "$CONFIG_PATH/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
+        -v "$CONFIG_PATH/nvim/config:$CONTAINER_HOME_DIRECTORY/.config/nvim" \
+        -v "$CONFIG_PATH/nvim/cache$CONTAINER_HOME_DIRECTORY/.cache/nvim" \
+        -v "$CONFIG_PATH/nvim/local/state$CONTAINER_HOME_DIRECTORY/.local/state/nvim" \
+        -v "$CONFIG_PATH/nvim/local/share/nvim$CONTAINER_HOME_DIRECTORY/.local/share/nvim" \
+        -v "$CONFIG_PATH/nvim/local/share/nvim-linux64$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64" \
         -v "${HOME_DIRECTORY}/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
-        -u "$USER_UID" \
-        -it --label "nvim-devcontainer-$PROJECT_PATH" "$IMAGE" bash -c "
+        -u "$CONFIG_REMOTE_USER" \
+        -it --label "nvim-devcontainer-$PROJECT_PATH" "$CONFIG_IMAGE" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
                 curl -LO ${NVIM_TAR_GZ_LINK} &&
@@ -172,9 +178,9 @@ if [ -z "$CONTAINER_ID" ]; then
 
             cd \"/workspaces/${PROJECT_NAME}\" &&
 
-            if [[ -n \"$POST_CREATE_COMMAND\" && \"$POST_CREATE_COMMAND\" != \"null\" ]]; then
+            if [[ -n \"$CONFIG_POST_CREATE_COMMAND\" && \"$CONFIG_POST_CREATE_COMMAND\" != \"null\" ]]; then
                 echo \"[INFO] Executing postCreateCommand...\" ;
-                $POST_CREATE_COMMAND
+                $CONFIG_POST_CREATE_COMMAND
             fi
 
             $START_COMMAND
