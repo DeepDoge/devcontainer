@@ -155,7 +155,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
-        --it -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
+        -it -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
                 curl -LO \"$NVIM_TAR_GZ_LINK\" &&
