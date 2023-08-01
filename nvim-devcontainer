@@ -98,8 +98,13 @@ IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "d
 DOCKERFILE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'build.dockerfile')
 POST_CREATE_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postCreateCommand')
 POST_START_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postStartCommand')
+USER_UID=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'remoteUser')
 
-if [[ -n "$DOCKERFILE" && "$DOCKERFILE" != "null" ]]; then
+if [[ -z "$USER_UID" ]]; then
+    USER_UID="root"
+fi
+
+if [[ -n "$DOCKERFILE" ]]; then
     DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
     
     DOCKERFILE_PATH="$DEVCONTAINER_JSON_DIR/$DOCKERFILE"
@@ -114,7 +119,7 @@ if [[ -n "$DOCKERFILE" && "$DOCKERFILE" != "null" ]]; then
     fi
 else
     IMAGE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image')
-    if [[ -z "$IMAGE" || "$IMAGE" == "null" ]]; then
+    if [[ -z "$IMAGE" ]]; then
         print_error "No image specified in devcontainer.json."
         exit 1
     fi
@@ -149,6 +154,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "${HOME_DIRECTORY}/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
+        -u "$USER_UID" \
         -it --label "nvim-devcontainer-$PROJECT_PATH" "$IMAGE" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
