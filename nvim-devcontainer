@@ -1,24 +1,17 @@
 #!/bin/bash
 
-# Colors
 GREEN='\033[0;32m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Get the absolute path of the current directory (project path)
 projectPath=$(realpath "$(pwd)")
-
-# Get the name of the project
 projectName=$(basename "${projectPath}")
 
-# Define paths for the NeoVim configuration in the host machine
 homeDirectory="${HOME}"
 configPath="${homeDirectory}/.config/@deepdoge/nvim-devcontainer"
 
-# Define the link to download the NeoVim binary
 nvimTarGzLink="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
 
-# Check if devcontainer.json exists in any of the defined paths
 devContainerJsonPaths=(
     "$(pwd)/devcontainer.json"
     "$(pwd)/.devcontainer/devcontainer.json"
@@ -29,7 +22,6 @@ if [[ ! -f "${devContainerJsonPaths[0]}" && ! -f "${devContainerJsonPaths[1]}" ]
     exit 1
 fi
 
-# Read the content of devcontainer.json
 devContainerJson=""
 for path in "${devContainerJsonPaths[@]}"; do
     if [[ -f "${path}" ]]; then
@@ -39,20 +31,23 @@ for path in "${devContainerJsonPaths[@]}"; do
     fi
 done
 
-# Check if a valid devcontainer.json is found
 if [[ -z "${devContainerJson}" ]]; then
     echo -e "[${RED}ERROR${NC}] No valid devcontainer.json found."
     exit 1
 fi
 
-# Get the directory where devcontainer.json is located
 devContainerJsonDir=$(dirname "${path}")
 
 buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
 postCreateCommand=$(echo "${devContainerJson}" | jq -r '.postCreateCommand')
+if [[ "${postCreateCommand}" == "null" ]]; then
+    postCreateCommand=""
+fi
 postStartCommand=$(echo "${devContainerJson}" | jq -r '.postStartCommand')
+if [[ "${postStartCommand}" == "null" ]]; then
+    postStartCommand=""
+fi
 
-# Build or pull the Docker image based on buildDockerfile presence
 if [[ -n "${buildDockerfile}" && "${buildDockerfile}" != "null" ]]; then
     echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
     dockerFilePath="${devContainerJsonDir}/${buildDockerfile}"
@@ -81,36 +76,22 @@ else
     fi
 fi
 
-if [[ \"${postCreateCommand}\" == \"null\" ]]; then
-    postCreateCommand=""
-fi
-if [[ \"${postStartCommand}\" == \"null\" ]]; then
-    postStartCommand=""
-fi
-
-# Script to be executed after attaching to the container
 startCommand="
-    # Change directory to the workspace
     cd \"/workspaces/${projectName}\" &&
 
-    # Execute postStartCommand after container is started
     if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
         echo \"[${GREEN}INFO${NC}] Executing postStartCommand...\"
         ${postStartCommand}
     fi
 
-    # Start NeoVim with all arguments
     ~/.local/bin/nvim
 "
 
-# Check if the container exists for the project
 container_id=$(docker ps -aq -f "label=nvim-devcontainer-${projectPath}")
 
 if [ -z "$container_id" ]; then
-    # The container doesn't exist, so we need to create and run it
     echo -e "[${GREEN}INFO${NC}] Creating container for \"${projectPath}\" project..."
 
-    # Install NeoVim and create the container
     docker run -w "/workspaces/${projectName}" \
         -v "${projectPath}:/workspaces/${projectName}" \
         -v "${configPath}/nvim/config:/root/.config/nvim" \
@@ -119,9 +100,7 @@ if [ -z "$container_id" ]; then
         -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
         -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
         -it --label "nvim-devcontainer-${projectPath}" "${image}" bash -c "
-            # Check if NeoVim is already installed in the container
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
-                # If not installed, download and extract NeoVim binary
                 cd /tmp &&
                 curl -LO ${nvimTarGzLink} &&
                 tar xzf nvim-linux64.tar.gz &&
@@ -129,18 +108,14 @@ if [ -z "$container_id" ]; then
                 mv ./nvim-linux64/* ~/.local/share/nvim-linux64/
             fi
 
-            # Ensure NeoVim binary is executable
             chmod +x ~/.local/share/nvim-linux64/bin/nvim
 
-            # Create a symbolic link for NeoVim binary in ~/.local/bin
             mkdir -p ~/.local/bin
             cd ~/.local/bin/ &&
             ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim
 
-            # Change directory to the workspace
             cd \"/workspaces/${projectName}\" &&
 
-            # Execute postCreateCommand after container is created
             if [[ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]]; then
                 echo \"[${GREEN}INFO${NC}] Executing postCreateCommand...\" ;
                 ${postCreateCommand}
@@ -151,7 +126,6 @@ if [ -z "$container_id" ]; then
 
     container_id=$(docker ps -aq -f "label=projectPath=${projectPath}")
 else
-    # Attach to the container and run NeoVim and bash
     if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "false" ]; then
         echo -e "[${GREEN}INFO${NC}] Starting container \"${container_id}\"..."
         docker start "${container_id}"
