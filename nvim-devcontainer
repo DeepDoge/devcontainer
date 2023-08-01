@@ -4,108 +4,162 @@ GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
-projectPath=$(realpath "$(pwd)")
-projectName=$(basename "${projectPath}")
+HOME_DIRECTORY="${HOME}"
+CONFIG_PATH="${HOME_DIRECTORY}/.config/@deepdoge/nvim-devcontainer"
+NVIM_TAR_GZ_LINK="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
 
-homeDirectory="${HOME}"
-configPath="${homeDirectory}/.config/@deepdoge/nvim-devcontainer"
+PROJECT_PATH=$(realpath "$(pwd)")
+PROJECT_NAME=$(basename "$PROJECT_PATH")
 
-nvimTarGzLink="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+# Function to print colored messages
+print_info() {
+    echo -e "[${GREEN}INFO${NC}] $1"
+}
 
-devContainerJsonPaths=(
-    "$(pwd)/devcontainer.json"
-    "$(pwd)/.devcontainer/devcontainer.json"
-)
+print_error() {
+    echo -e "[${RED}ERROR${NC}] $1"
+}
 
-if [[ ! -f "${devContainerJsonPaths[0]}" && ! -f "${devContainerJsonPaths[1]}" ]]; then
-    echo -e "[${RED}ERROR${NC}] No devcontainer.json found."
-    exit 1
-fi
+# Function to find the devcontainer.json file
+find_devcontainer_json() {
+    local paths=(
+        "$(pwd)/devcontainer.json"
+        "$(pwd)/.devcontainer/devcontainer.json"
+    )
 
-devContainerJson=""
-for path in "${devContainerJsonPaths[@]}"; do
-    if [[ -f "${path}" ]]; then
-        echo -e "[${GREEN}INFO${NC}] Found devcontainer.json at \"${path}\"."
-        devContainerJson=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "${path}")
-        break
+    for path in "${paths[@]}"; do
+        if [[ -f "$path" ]]; then
+            echo "$path"
+            return
+        fi
+    done
+}
+
+# Function to read the content of devcontainer.json
+read_devcontainer_json() {
+    local devcontainer_json_path="$1"
+    sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$devcontainer_json_path"
+}
+
+# Function to get a value from devcontainer.json or devcontainer.metadata
+get_config_value() {
+    local devcontainer_json="$1"
+    local image_devcontainer_metadata="$2"
+    local key="$3"
+
+    local value=$(echo "$devcontainer_json" | jq -r ".${key}")
+    if [[ "$value" != "null" ]]; then
+        echo "$value"
+        return
     fi
-done
 
-if [[ -z "${devContainerJson}" ]]; then
-    echo -e "[${RED}ERROR${NC}] No valid devcontainer.json found."
-    exit 1
-fi
+    local metadata_value=$(echo "$image_devcontainer_metadata" | jq -r ".[] | select(.${key} != null) | .${key}")
+    if [[ "$metadata_value" != "" && "$metadata_value" != "null" ]]; then
+        echo "$metadata_value"
+        return
+    fi
 
-devContainerJsonDir=$(dirname "${path}")
+    echo ""
+}
 
-buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
-postCreateCommand=$(echo "${devContainerJson}" | jq -r '.postCreateCommand')
-if [[ "${postCreateCommand}" == "null" ]]; then
-    postCreateCommand=""
-fi
-postStartCommand=$(echo "${devContainerJson}" | jq -r '.postStartCommand')
-if [[ "${postStartCommand}" == "null" ]]; then
-    postStartCommand=""
-fi
-
-if [[ -n "${buildDockerfile}" && "${buildDockerfile}" != "null" ]]; then
-    echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
-    dockerFilePath="${devContainerJsonDir}/${buildDockerfile}"
-    dockerFileHash=$(sha256sum "${dockerFilePath}" | awk '{print $1}')
-    image="nvim-devcontainer--${projectName}--${dockerFileHash}"
-    docker build -t "${image}" -f "${dockerFilePath}" "${devContainerJsonDir}"
+# Function to build the Docker image
+build_docker_image() {
+    local devcontainer_json_dir="$1"
+    local dockerfile="$2"
+    local image_name="$3"
+    
+    local dockerfile_path="$devcontainer_json_dir/$dockerfile"
+    local dockerfile_hash=$(sha256sum "$dockerfile_path" | awk '{print $1}')
+    local image="nvim-devcontainer--$image_name--$dockerfile_hash"
+    
+    print_info "Building Docker image using $dockerfile..."
+    docker build -t "$image" -f "$dockerfile_path" "$devcontainer_json_dir"
 
     if [[ $? -ne 0 ]]; then
-        echo -e "[${RED}ERROR${NC}] Docker build failed."
+        print_error "Docker build failed."
         exit 1
     fi
 
+    echo "$image"
+}
+
+# Function to pull the Docker image
+pull_docker_image() {
+    local image="$1"
+
+    print_info "Pulling Docker image \"$image\"..."
+    docker pull "$image"
+
+    if [[ $? -ne 0 ]]; then
+        print_error "Docker pull failed."
+        exit 1
+    fi
+}
+
+# Main script
+DEVCONTAINER_JSON_PATH=$(find_devcontainer_json)
+
+if [[ ! -f "$DEVCONTAINER_JSON_PATH" ]]; then
+    print_error "No devcontainer.json found."
+    exit 1
+fi
+
+DEVCONTAINER_JSON=$(read_devcontainer_json "$DEVCONTAINER_JSON_PATH")
+if [[ -z "$DEVCONTAINER_JSON" ]]; then
+    print_error "No valid devcontainer.json found."
+    exit 1
+fi
+
+IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$image")
+
+BUILD_DOCKERFILE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'build.dockerfile')
+POST_CREATE_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postCreateCommand')
+POST_START_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postStartCommand')
+
+if [[ -n "$BUILD_DOCKERFILE" && "$BUILD_DOCKERFILE" != "null" ]]; then
+    DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
+    IMAGE=$(build_docker_image "$DEVCONTAINER_JSON_DIR" "$BUILD_DOCKERFILE" "$PROJECT_NAME")
 else
-    image=$(echo "${devContainerJson}" | jq -r '.image')
-    if [[ -z "${image}" || "${image}" == "null" ]]; then
-        echo -e "[${RED}ERROR${NC}] No image specified in devcontainer.json."
+    IMAGE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image')
+    if [[ -z "$IMAGE" || "$IMAGE" == "null" ]]; then
+        print_error "No image specified in devcontainer.json."
         exit 1
     fi
 
-    echo -e "[${GREEN}INFO${NC}] Pulling Docker image \"${image}\"..."
-    docker pull "${image}"
-
-    if [[ $? -ne 0 ]]; then
-        echo -e "[${RED}ERROR${NC}] Docker pull failed."
-        exit 1
-    fi
+    pull_docker_image "$IMAGE"
 fi
 
-startCommand="
-    cd \"/workspaces/${projectName}\" &&
+# Start the container
+START_COMMAND="
+    cd \"/workspaces/${PROJECT_NAME}\" &&
 
-    if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
+    if [[ -n \"$POST_START_COMMAND\" && \"$POST_START_COMMAND\" != \"null\" ]]; then
         echo \"[INFO] Executing postStartCommand...\"
-        ${postStartCommand}
+        $POST_START_COMMAND
     fi
 
     ~/.local/bin/nvim
 "
 
-container_id=$(docker ps -aq -f "label=nvim-devcontainer-${projectPath}")
+CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
 
-if [ -z "$container_id" ]; then
-    echo -e "[${GREEN}INFO${NC}] Creating container for \"${projectPath}\" project..."
+if [ -z "$CONTAINER_ID" ]; then
+    print_info "Creating container for \"$PROJECT_PATH\" project..."
 
-    docker run --net=host -w "/workspaces/${projectName}" \
-        -v "${projectPath}:/workspaces/${projectName}" \
-        -v "${configPath}/nvim/config:/root/.config/nvim" \
-        -v "${configPath}/nvim/cache:/root/.cache/nvim" \
-        -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
-        -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
-        -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
-        -v ~/.gitconfig:/etc/gitconfig \
+    docker run --net=host -w "/workspaces/$PROJECT_NAME" \
+        -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
+        -v "$CONFIG_PATH/nvim/config:/root/.config/nvim" \
+        -v "$CONFIG_PATH/nvim/cache:/root/.cache/nvim" \
+        -v "$CONFIG_PATH/nvim/local/state:/root/.local/state/nvim" \
+        -v "$CONFIG_PATH/nvim/local/share/nvim:/root/.local/share/nvim" \
+        -v "$CONFIG_PATH/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
+        -v "${HOME_DIRECTORY}/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
-        -it --label "nvim-devcontainer-${projectPath}" "${image}" bash -c "
+        -it --label "nvim-devcontainer-$PROJECT_PATH" "$IMAGE" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
-                curl -LO ${nvimTarGzLink} &&
+                curl -LO ${NVIM_TAR_GZ_LINK} &&
                 tar xzf nvim-linux64.tar.gz &&
                 mkdir -p ~/.local/share &&
                 mv ./nvim-linux64/* ~/.local/share/nvim-linux64/
@@ -117,24 +171,24 @@ if [ -z "$container_id" ]; then
             cd ~/.local/bin/ &&
             ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim
 
-            cd \"/workspaces/${projectName}\" &&
+            cd \"/workspaces/${PROJECT_NAME}\" &&
 
-            if [[ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]]; then
+            if [[ -n \"$POST_CREATE_COMMAND\" && \"$POST_CREATE_COMMAND\" != \"null\" ]]; then
                 echo \"[INFO] Executing postCreateCommand...\" ;
-                ${postCreateCommand}
+                $POST_CREATE_COMMAND
             fi
 
-            ${startCommand}
+            $START_COMMAND
         "
 
-    container_id=$(docker ps -aq -f "label=projectPath=${projectPath}")
+    CONTAINER_ID=$(docker ps -aq -f "label=projectPath=$PROJECT_PATH")
 else
-    if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "false" ]; then
-        echo -e "[${GREEN}INFO${NC}] Starting container \"${container_id}\"..."
-        docker start "${container_id}"
+    if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; then
+        print_info "Starting container \"$CONTAINER_ID\"..."
+        docker start "$CONTAINER_ID"
     fi
-    echo -e "[${GREEN}INFO${NC}] Attaching to the container \"${container_id}\" project..."
-    docker exec -it "${container_id}" bash -c "
-        ${startCommand}    
+    print_info "Attaching to the container \"$CONTAINER_ID\" project..."
+    docker exec -it "$CONTAINER_ID" bash -c "
+        $START_COMMAND
     "
 fi
