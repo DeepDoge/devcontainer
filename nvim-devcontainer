@@ -42,7 +42,7 @@ devContainerJsonDir=$(dirname "${path}")
 # Extract build properties from the JSON using jq
 buildDockerfile=$(echo "${devContainerJson}" | jq -r '.build.dockerfile')
 
-if [[ -n "${buildDockerfile}" || "${buildDockerfile}" != "null" ]]; then
+if [[ -n "${buildDockerfile}" && "${buildDockerfile}" != "null" ]]; then
     echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
     dockerFilePath="${devContainerJsonDir}/${buildDockerfile}"
     dockerFileHash=$(sha256sum "${dockerFilePath}" | awk '{print $1}')
