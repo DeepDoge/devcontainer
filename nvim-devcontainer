@@ -120,12 +120,10 @@ if [ -z "$container_id" ]; then
                 ${postCreateCommand}
             fi
         "
-else
-    # The container exists, so we'll attach to it
-    echo -e "[${GREEN}INFO${NC}] Attaching to the container for \"${projectPath}\" project..."
 fi
 
 # Attach to the container and run NeoVim and bash
+echo -e "[${GREEN}INFO${NC}] Attaching to the container for \"${projectPath}\" project..."
 docker exec -it "$container_id" bash -c "
     # Execute postStartCommand after container is started
     if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
