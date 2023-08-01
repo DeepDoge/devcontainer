@@ -150,6 +150,13 @@ CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
 if [ -z "$CONTAINER_ID" ]; then
     print_info "Creating container for \"$PROJECT_PATH\" project..."
 
+    mkdir -p "$CONFIG_PATH/nvim/config"
+    mkdir -p "$CONFIG_PATH/nvim/cache"
+    mkdir -p "$CONFIG_PATH/nvim/local/state"
+    mkdir -p "$CONFIG_PATH/nvim/local/share/nvim"
+    mkdir -p "$CONFIG_PATH/nvim/local/share/nvim-linux64"
+    mkdir -p "/tmp/.X11-unix"
+
     docker run --net=host -w "/workspaces/$PROJECT_NAME" \
         -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
         -v "$CONFIG_PATH/nvim/config:$CONTAINER_HOME_DIRECTORY/.config/nvim" \
@@ -157,7 +164,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$CONFIG_PATH/nvim/local/state:$CONTAINER_HOME_DIRECTORY/.local/state/nvim" \
         -v "$CONFIG_PATH/nvim/local/share/nvim:$CONTAINER_HOME_DIRECTORY/.local/share/nvim" \
         -v "$CONFIG_PATH/nvim/local/share/nvim-linux64:$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64" \
-        -v "${HOME_DIRECTORY}/.gitconfig:/etc/gitconfig" \
+        -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
         -u "$CONFIG_REMOTE_USER" \
