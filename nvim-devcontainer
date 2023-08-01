@@ -140,6 +140,8 @@ if [ -z "$container_id" ]; then
 
             ${startCommand}
         "
+
+    container_id=$(docker ps -aq -f "label=projectPath=${projectPath}")
 else
     # Attach to the container and run NeoVim and bash
     if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "false" ]; then
