@@ -15,7 +15,7 @@ devContainerJsonPaths=(
 homeDirectory="${HOME}"
 currentDirectory="$(pwd)"
 nvimTarGzLink="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
-configPath="${homeDirectory}/.config/@deepdoge/devcontainer"
+configPath="${homeDirectory}/.config/@deepdoge/nvim-devcontainer"
 
 if [[ ! -f "${devContainerJsonPaths[0]}" && ! -f "${devContainerJsonPaths[1]}" ]]; then
     echo -e "[${RED}ERROR${NC}] No devcontainer.json found."

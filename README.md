@@ -66,20 +66,20 @@ To create and run a NeoVim development container for your project, follow these 
 The NeoVim configuration inside the container will be stored in a separate directory on your host machine to avoid conflicts with your local NeoVim setup. By default, the configuration will be located at:
 
 ```
-~/.config/@deepdoge/devcontainer/nvim/config
+~/.config/@deepdoge/nvim-devcontainer/nvim/config
 ```
 
 The directory structure will look like this:
 
 ```
-~/.config/@deepdoge/devcontainer/nvim
+~/.config/@deepdoge/nvim-devcontainer/nvim
 ├── cache
 ├── config
 ├── local
 │   └── share
 ```
 
-The directories `~/.config/nvim`, `~/.cache/nvim`, and `~/.local/share/nvim` inside the container will be mounted to the corresponding directories in the `~/.config/@deepdoge/devcontainer/nvim` directory on your host machine.
+The directories `~/.config/nvim`, `~/.cache/nvim`, and `~/.local/share/nvim` inside the container will be mounted to the corresponding directories in the `~/.config/@deepdoge/nvim-devcontainer/nvim` directory on your host machine.
 
 ## Customizing the Docker Image
 
