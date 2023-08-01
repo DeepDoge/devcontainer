@@ -53,7 +53,7 @@ if [[ -n "${buildDockerfile}" && "${buildDockerfile}" != "null" ]]; then
     echo -e "[${GREEN}INFO${NC}] Building Docker image using ${buildDockerfile}..."
     dockerFilePath="${devContainerJsonDir}/${buildDockerfile}"
     dockerFileHash=$(sha256sum "${dockerFilePath}" | awk '{print $1}')
-    image="nvim-devcontainer--${projectPath}--${dockerFileHash}"
+    image="nvim-devcontainer--${projectName}--${dockerFileHash}"
     docker build -t "${image}" -f "${dockerFilePath}" "${devContainerJsonDir}"
 
     if [[ $? -ne 0 ]]; then
@@ -101,7 +101,7 @@ if [ -z "$container_id" ]; then
 
     # Install NeoVim and create the container
     docker run -w "/workspaces/${projectPath}" \
-        -v "${projectPath}:/workspaces/${projectPath}" \
+        -v "${projectPath}:/workspaces/${projectName}" \
         -v "${configPath}/nvim/config:/root/.config/nvim" \
         -v "${configPath}/nvim/cache:/root/.cache/nvim" \
         -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
@@ -156,9 +156,5 @@ if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "true" ]; 
         echo "No processes attached to the container. Stopping..."
         docker stop "${container_id}"
         docker rm "${container_id}"
-    else
-        echo "Processes are still attached to the container."
     fi
-else
-    echo "Container with ID ${container_id} is not running or doesn't exist."
 fi
