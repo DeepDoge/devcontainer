@@ -26,7 +26,6 @@ Requirements:
 To install `nvim-devcontainer`, run the following commands in your terminal:
 
 ```bash
-rm -rf /tmp/nvim-devcontainer && \
 git clone https://github.com/DeepDoge/nvim-devcontainer.git /tmp/nvim-devcontainer && \
 mv /tmp/nvim-devcontainer/nvim-devcontainer ~/.local/bin && \
 chmod +x ~/.local/bin/nvim-devcontainer && \
