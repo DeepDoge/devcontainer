@@ -47,17 +47,15 @@ read_devcontainer_json() {
 
 # Function to get a value from devcontainer.json or devcontainer.metadata
 get_config_value() {
-    local devcontainer_json="$1"
-    local image_devcontainer_metadata="$2"
     local key="$3"
 
-    local value=$(echo "$devcontainer_json" | jq -r ".${key}")
+    local value=$(echo "$DEVCONTAINER_JSON" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
         echo "$value"
         return
     fi
 
-    local metadata_value=$(echo "$image_devcontainer_metadata" | jq -r ".[] | select(.${key} != null) | .${key}")
+    local metadata_value=$(echo "$IMAGE_DEVCONTAINER_METADATA" | jq -r ".[] | select(.${key} != null) | .${key}")
     if [[ "$metadata_value" != "" && "$metadata_value" != "null" ]]; then
         echo "$metadata_value"
         return
@@ -94,11 +92,12 @@ if [[ -z "$DEVCONTAINER_JSON" ]]; then
 fi
 
 IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$image")
+echo "$IMAGE_DEVCONTAINER_METADATA" | jq
 
-DOCKERFILE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'build.dockerfile')
-POST_CREATE_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postCreateCommand')
-POST_START_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postStartCommand')
-USER_UID=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'remoteUser')
+DOCKERFILE=$(get_config_value 'build.dockerfile')
+POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
+POST_START_COMMAND=$(get_config_value 'postStartCommand')
+USER_UID=$(get_config_value 'remoteUser')
 
 if [[ -z "$USER_UID" ]]; then
     USER_UID="root"
