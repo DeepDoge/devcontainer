@@ -87,6 +87,20 @@ startCommand="
 
     # Start NeoVim and enter the container's bash shell
     ~/.local/bin/nvim ; bash
+
+    # Check if the container is running
+    if docker inspect -f '{{.State.Running}}' \"${container_id}\" 2>/dev/null; then
+        # Check if there are any attached processes
+        if [[ $(docker exec \"${container_id}\" ps -ef | wc -l) -eq 1 ]]; then
+            echo \"No processes attached to the container. Stopping...\"
+            docker stop \"${container_id}\"
+            docker rm \"${container_id}\"
+        else
+            echo \"Processes are still attached to the container.\"
+        fi
+    else
+        echo \"Container with ID ${container_id} is not running or doesn't exist.\"
+    fi
 "
 
 # Check if the container exists for the project
@@ -104,7 +118,7 @@ if [ -z "$container_id" ]; then
         -v "${configPath}/nvim/local/state:/root/.local/state/nvim" \
         -v "${configPath}/nvim/local/share/nvim:/root/.local/share/nvim" \
         -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
-        -it ${container_id} --rm --label "projectPath=${projectPath}" "${image}" bash -c "
+        -it --label "projectPath=${projectPath}" "${image}" bash -c "
             # Check if NeoVim is already installed in the container
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 # If not installed, download and extract NeoVim binary
