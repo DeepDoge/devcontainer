@@ -116,7 +116,11 @@ else
     pull_docker_image "$IMAGE"
 fi
 
+print_info "Using Docker image \"$IMAGE\"..."
 IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$IMAGE")
+
+print_info "devcontainer.metadata: $IMAGE_DEVCONTAINER_METADATA"
+print_info "devcontainer.json: $DEVCONTAINER_JSON"
 
 POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
 POST_START_COMMAND=$(get_config_value 'postStartCommand')
@@ -141,7 +145,7 @@ START_COMMAND="
 CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
 
 if [ -z "$CONTAINER_ID" ]; then
-    print_info "Creating container with image \"$IMAGE\" for \"$PROJECT_PATH\" project..."
+    print_info "Creating container for \"$PROJECT_PATH\" project..."
 
     docker run --net=host -w "/workspaces/$PROJECT_NAME" \
         -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
