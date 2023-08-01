@@ -119,8 +119,8 @@ fi
 print_info "Using Docker image \"$IMAGE\"..."
 IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$IMAGE")
 
-print_info "devcontainer.metadata: $(echo $IMAGE_DEVCONTAINER_METADATA | jq -c)"
-print_info "devcontainer.json: $(echo $DEVCONTAINER_JSON | jq -c)"
+print_info "devcontainer.metadata: $(echo $IMAGE_DEVCONTAINER_METADATA | jq -r ".")"
+print_info "devcontainer.json: $(echo $DEVCONTAINER_JSON | jq -r ".")"
 
 POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
 POST_START_COMMAND=$(get_config_value 'postStartCommand')
