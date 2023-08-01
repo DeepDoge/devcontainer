@@ -91,17 +91,7 @@ if [[ -z "$DEVCONTAINER_JSON" ]]; then
     exit 1
 fi
 
-IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$image")
-echo "$IMAGE_DEVCONTAINER_METADATA" | jq
-
 DOCKERFILE=$(get_config_value 'build.dockerfile')
-POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
-POST_START_COMMAND=$(get_config_value 'postStartCommand')
-USER_UID=$(get_config_value 'remoteUser')
-
-if [[ -z "$USER_UID" ]]; then
-    USER_UID="root"
-fi
 
 if [[ -n "$DOCKERFILE" ]]; then
     DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
@@ -124,6 +114,16 @@ else
     fi
 
     pull_docker_image "$IMAGE"
+fi
+
+IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$IMAGE")
+
+POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
+POST_START_COMMAND=$(get_config_value 'postStartCommand')
+USER_UID=$(get_config_value 'remoteUser')
+
+if [[ -z "$USER_UID" ]]; then
+    USER_UID="root"
 fi
 
 # Start the container
