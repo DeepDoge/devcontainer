@@ -82,7 +82,7 @@ docker run -w "/workspaces/${projectName}" \
     -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
     -it --rm "${image}" \
     bash -c "
-            if [ ! -d ~/.local/share/nvim-linux64 ]; then
+            if [ -f ~/.local/share/nvim-linux64/nvim ]; then
                 cd /tmp &&
                 curl -LO ${nvimTarGzLink} &&
                 tar xzf nvim-linux64.tar.gz &&
