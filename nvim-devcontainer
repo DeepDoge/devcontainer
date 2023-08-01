@@ -134,7 +134,7 @@ else
 fi
 
 CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
-CONTAINER_LABEL="nvim-devcontainer-$PROJECT_PATH" "$CONFIG_IMAGE"
+CONTAINER_LABEL="nvim-devcontainer-$PROJECT_PATH"
 
 if [ -z "$CONTAINER_ID" ]; then
     print_info "Creating container for \"$PROJECT_PATH\" project..."
@@ -155,7 +155,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
-        -it --label $CONTAINER_LABEL bash -c "
+        -it --label \"$CONTAINER_LABEL\" \"$CONFIG_IMAGE\" bash -c "
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
                 curl -LO \"$NVIM_TAR_GZ_LINK\" &&
