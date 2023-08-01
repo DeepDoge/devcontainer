@@ -33,7 +33,7 @@ find_devcontainer_json() {
 
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]]; then
-            __R__="$path"
+            echo "$path"
             return
         fi
     done
@@ -53,38 +53,17 @@ get_config_value() {
 
     local value=$(echo "$devcontainer_json" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
-        __R__="$value"
+        echo "$value"
         return
     fi
 
     local metadata_value=$(echo "$image_devcontainer_metadata" | jq -r ".[] | select(.${key} != null) | .${key}")
     if [[ "$metadata_value" != "" && "$metadata_value" != "null" ]]; then
-        __R__="$metadata_value"
+        echo "$metadata_value"
         return
     fi
 
-    __R__=""
-}
-
-# Function to build the Docker image
-build_docker_image() {
-    local devcontainer_json_dir="$1"
-    local dockerfile="$2"
-    local image_name="$3"
-    
-    local dockerfile_path="$devcontainer_json_dir/$dockerfile"
-    local dockerfile_hash=$(sha256sum "$dockerfile_path" | awk '{print $1}')
-    local image="nvim-devcontainer--$image_name--$dockerfile_hash"
-    
-    print_info "Building Docker image using $dockerfile..."
-    docker build -t "$image" -f "$dockerfile_path" "$devcontainer_json_dir"
-
-    if [[ $? -ne 0 ]]; then
-        print_error "Docker build failed."
-        exit 1
-    fi
-
-    __R__="$image"
+    echo ""
 }
 
 # Function to pull the Docker image
@@ -101,8 +80,7 @@ pull_docker_image() {
 }
 
 # Main script
-find_devcontainer_json
-DEVCONTAINER_JSON_PATH=$$__R__
+DEVCONTAINER_JSON_PATH=$(find_devcontainer_json)
 
 if [[ ! -f "$DEVCONTAINER_JSON_PATH" ]]; then
     print_error "No devcontainer.json found."
@@ -117,21 +95,25 @@ fi
 
 IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$image")
 
-get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'build.dockerfile'
-BUILD_DOCKERFILE=$$__R__
-get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postStartCommand'
-POST_START_COMMAND=$$__R__
-get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postCreateCommand'
-POST_CREATE_COMMAND=$$__R__
+DOCKERFILE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'build.dockerfile')
+POST_CREATE_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postCreateCommand')
+POST_START_COMMAND=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'postStartCommand')
 
-if [[ -n "$BUILD_DOCKERFILE" && "$BUILD_DOCKERFILE" != "null" ]]; then
+if [[ -n "$DOCKERFILE" && "$DOCKERFILE" != "null" ]]; then
     DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
+    
+    DOCKERFILE_PATH="$DEVCONTAINER_JSON_DIR/$DOCKERFILE"
+    IMAGE="nvim-devcontainer--$PROJECT_NAME--$(sha256sum "$DOCKERFILE_PATH" | awk '{print $1}')"
+    
+    print_info "Building Docker image using $DOCKERFILE_PATH..."
+    docker build -t "$IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
 
-    build_docker_image "$DEVCONTAINER_JSON_DIR" "$BUILD_DOCKERFILE" "$PROJECT_NAME"
-    IMAGE=$$__R__
+    if [[ $? -ne 0 ]]; then
+        print_error "Docker build failed."
+        exit 1
+    fi
 else
-    get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image'
-    IMAGE=$$__R__
+    IMAGE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image')
     if [[ -z "$IMAGE" || "$IMAGE" == "null" ]]; then
         print_error "No image specified in devcontainer.json."
         exit 1
