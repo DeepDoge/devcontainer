@@ -23,8 +23,8 @@ print_error() {
 # Function to find the devcontainer.json file
 find_devcontainer_json() {
     local paths=(
-        "$(pwd)/devcontainer.json"
-        "$(pwd)/.devcontainer/devcontainer.json"
+        "$PROJECT_PATH/devcontainer.json"
+        "$PROJECT_PATH/.devcontainer/devcontainer.json"
     )
 
     for path in "${paths[@]}"; do
@@ -144,7 +144,7 @@ START_COMMAND="
 CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
 
 if [ -z "$CONTAINER_ID" ]; then
-    print_info "Creating container for \"$PROJECT_PATH\" project..."
+    print_info "Creating container with image \"$IMAGE\" for \"$PROJECT_PATH\" project..."
 
     docker run --net=host -w "/workspaces/$PROJECT_NAME" \
         -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
