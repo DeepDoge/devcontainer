@@ -139,7 +139,7 @@ if [ -z "$container_id" ]; then
         "
 else
     # Attach to the container and run NeoVim and bash
-    if "$(docker inspect -f '{{.State.Running}}' \"${container_id}\")" == "false"; then
+    if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "false" ]; then
         echo -e "[${GREEN}INFO${NC}] Starting container \"${container_id}\"..."
         docker start "${container_id}"
     fi
@@ -150,7 +150,7 @@ else
 fi
 
 # Check if the container is running
-if "$(docker inspect -f '{{.State.Running}}' \"${container_id}\")" == "true"; then
+if [ "$(docker inspect -f '{{.State.Running}}' "${container_id}")" == "true" ]; then
     # Check if there are any attached processes
     if [[ $(docker exec "${container_id}" ps -ef | wc -l) -eq 1 ]]; then
         echo "No processes attached to the container. Stopping..."
