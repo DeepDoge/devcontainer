@@ -155,21 +155,21 @@ if [ -z "$CONTAINER_ID" ]; then
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
         -it --label "nvim-devcontainer-$PROJECT_PATH" "$CONFIG_IMAGE" bash -c "
-            if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
+            if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
-                curl -LO ${NVIM_TAR_GZ_LINK} &&
+                curl -LO \"$NVIM_TAR_GZ_LINK\" &&
                 tar xzf nvim-linux64.tar.gz &&
-                mkdir -p ~/.local/share &&
-                mv ./nvim-linux64/* ~/.local/share/nvim-linux64/
+                mkdir -p $CONTAINER_HOME_DIRECTORY/.local/share &&
+                mv ./nvim-linux64/* $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/
             fi
 
-            chmod +x ~/.local/share/nvim-linux64/bin/nvim
+            chmod +x \"$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim\"
             
-            mkdir -p ~/.local/bin
-            cd ~/.local/bin/ &&
-            ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim
+            mkdir -p $CONTAINER_HOME_DIRECTORY/.local/bin
+            cd $CONTAINER_HOME_DIRECTORY/.local/bin/ &&
+            ln -sf $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim nvim
 
-            cd \"/workspaces/${PROJECT_NAME}\" &&
+            cd \"/workspaces/$PROJECT_NAME\" &&
 
             if [[ -n \"$CONFIG_POST_CREATE_COMMAND\" && \"$CONFIG_POST_CREATE_COMMAND\" != \"null\" ]]; then
                 echo \"[INFO] Executing postCreateCommand...\" ;
@@ -203,7 +203,7 @@ docker exec -it "$CONTAINER_ID" \
             $CONFIG_POST_START_COMMAND
         fi
 
-        ~/.local/bin/nvim
+        $CONTAINER_HOME_DIRECTORY/.local/bin/nvim
     "
 if [[ $? -ne 0 ]]; then
     print_error "Attaching to the container failed."
