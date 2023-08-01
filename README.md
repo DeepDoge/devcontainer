@@ -7,6 +7,8 @@
 Not all `devcontainer.json` configurations are supported yet. The following configurations are supported:
 - `image`
 - `build.dockerfile`
+- `postCreateCommand`
+- `postStartCommand`
 
 ## Features
 

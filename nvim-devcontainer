@@ -70,6 +70,12 @@ else
     fi
 fi
 
+# Extract postStartCommand from the JSON using jq
+postStartCommand=$(echo "${devContainerJson}" | jq -r '.postStartCommand')
+
+# Extract postCreateCommand from the JSON using jq
+postCreateCommand=$(echo "${devContainerJson}" | jq -r '.postCreateCommand')
+
 # Build, Run, and Install NeoVim to the container.
 echo -e "[${GREEN}INFO${NC}] Building \"${image}\" image and running container for \"${projectName}\" project."
 
@@ -82,19 +88,33 @@ docker run -w "/workspaces/${projectName}" \
     -v "${configPath}/nvim/local/share/nvim-linux64:/root/.local/share/nvim-linux64" \
     -it --rm "${image}" \
     bash -c "
+            # Check if NeoVim is already installed in the container
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
+                # If not installed, download and extract NeoVim binary
                 cd /tmp &&
                 curl -LO ${nvimTarGzLink} &&
                 tar xzf nvim-linux64.tar.gz &&
                 mkdir -p ~/.local/share &&
                 mv ./nvim-linux64/* ~/.local/share/nvim-linux64/
             fi
-            
-            chmod +x ~/.local/share/nvim-linux64/bin/nvim &&
+
+            # Ensure NeoVim binary is executable
+            chmod +x ~/.local/share/nvim-linux64/bin/nvim
+
+            # Create a symbolic link for NeoVim binary in ~/.local/bin
             mkdir -p ~/.local/bin
             cd ~/.local/bin/ &&
             ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim
+
+            # Change directory to the workspace
             cd \"/workspaces/${projectName}\" &&
 
+            # Execute postCreateCommand after container is created
+            ${postCreateCommand} ; # Because we create the container everytime, we run postCreateCommand everytime for now.
+
+            # Execute postStartCommand after container is created
+            ${postStartCommand} ;
+
+            # Start NeoVim and enter the container's bash shell
             ~/.local/bin/nvim ; bash
         "
