@@ -133,18 +133,6 @@ else
     CONTAINER_HOME_DIRECTORY="/home/$CONFIG_REMOTE_USER"
 fi
 
-# Start the container
-START_COMMAND="
-    cd \"/workspaces/${PROJECT_NAME}\" &&
-
-    if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
-        echo \"[INFO] Executing postStartCommand...\"
-        $CONFIG_POST_START_COMMAND
-    fi
-
-    ~/.local/bin/nvim
-"
-
 CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
 
 if [ -z "$CONTAINER_ID" ]; then
@@ -165,8 +153,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$CONFIG_PATH/nvim/local/share/nvim-linux64:$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64" \
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
-        -e DISPLAY=$DISPLAY \
-        -u "$CONFIG_REMOTE_USER":1024 \
+        -u root \
         -it --label "nvim-devcontainer-$PROJECT_PATH" "$CONFIG_IMAGE" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
@@ -188,8 +175,6 @@ if [ -z "$CONTAINER_ID" ]; then
                 echo \"[INFO] Executing postCreateCommand...\" ;
                 $CONFIG_POST_CREATE_COMMAND
             fi
-
-            $START_COMMAND
         "
     if [[ $? -ne 0 ]]; then
         print_error "Creating the container failed."
@@ -197,21 +182,30 @@ if [ -z "$CONTAINER_ID" ]; then
     fi
 
     CONTAINER_ID=$(docker ps -aq -f "label=projectPath=$PROJECT_PATH")
-else
-    if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; then
-        print_info "Starting container \"$CONTAINER_ID\"..."
-        docker start "$CONTAINER_ID"
-        if [[ $? -ne 0 ]]; then
-            print_error "Starting the container failed."
-            exit 1
-        fi
-    fi
-    print_info "Attaching to the container \"$CONTAINER_ID\" project..."
-    docker exec -it "$CONTAINER_ID" bash -c "
-        $START_COMMAND
-    "
+fi
+
+if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; then
+    print_info "Starting container \"$CONTAINER_ID\"..."
+    docker start "$CONTAINER_ID"
     if [[ $? -ne 0 ]]; then
-        print_error "Attaching to the container failed."
+        print_error "Starting the container failed."
         exit 1
     fi
+fi
+print_info "Attaching to the container \"$CONTAINER_ID\" project..."
+docker exec -it "$CONTAINER_ID" \
+    -u "$CONFIG_REMOTE_USER" \
+    -e DISPLAY=$DISPLAY \
+    -w "/workspaces/$PROJECT_NAME" \
+    bash -c "
+        if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
+            echo \"[INFO] Executing postStartCommand...\"
+            $CONFIG_POST_START_COMMAND
+        fi
+
+        ~/.local/bin/nvim
+    "
+if [[ $? -ne 0 ]]; then
+    print_error "Attaching to the container failed."
+    exit 1
 fi
