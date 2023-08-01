@@ -55,7 +55,7 @@ get_config_value() {
         return
     fi
 
-    local metadata_value=$(echo "$IMAGE_DEVCONTAINER_METADATA" | jq -r ".[] | select(.${key} != null) | .${key}")
+    local metadata_value=$(echo "$IMAGE_DEVCONTAINER_METADATA" | jq -r ". | reverse | .[] | select(.${key} != null) | .${key}" | head -n 1)
     if [[ "$metadata_value" != "" && "$metadata_value" != "null" ]]; then
         echo "$metadata_value"
         return
