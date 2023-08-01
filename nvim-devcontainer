@@ -80,7 +80,7 @@ startCommand="
     cd \"/workspaces/${projectName}\" &&
 
     if [[ -n \"${postStartCommand}\" && \"${postStartCommand}\" != \"null\" ]]; then
-        echo \"[\\${GREEN}INFO\\${NC}] Executing postStartCommand...\"
+        echo \"[\${GREEN}INFO\${NC}] Executing postStartCommand...\"
         ${postStartCommand}
     fi
 
@@ -117,7 +117,7 @@ if [ -z "$container_id" ]; then
             cd \"/workspaces/${projectName}\" &&
 
             if [[ -n \"${postCreateCommand}\" && \"${postCreateCommand}\" != \"null\" ]]; then
-                echo \"[\\${GREEN}INFO\\${NC}] Executing postCreateCommand...\" ;
+                echo \"[\${GREEN}INFO\${NC}] Executing postCreateCommand...\" ;
                 ${postCreateCommand}
             fi
 
