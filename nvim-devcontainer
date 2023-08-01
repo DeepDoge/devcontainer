@@ -155,7 +155,6 @@ if [ -z "$CONTAINER_ID" ]; then
     mkdir -p "$CONFIG_PATH/nvim/local/state"
     mkdir -p "$CONFIG_PATH/nvim/local/share/nvim"
     mkdir -p "$CONFIG_PATH/nvim/local/share/nvim-linux64"
-    mkdir -p "/tmp/.X11-unix"
 
     docker run --net=host -w "/workspaces/$PROJECT_NAME" \
         -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
@@ -167,7 +166,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -e DISPLAY=$DISPLAY \
-        -u "$CONFIG_REMOTE_USER" \
+        -u "$CONFIG_REMOTE_USER":1000 \
         -it --label "nvim-devcontainer-$PROJECT_PATH" "$CONFIG_IMAGE" bash -c "
             if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
@@ -178,7 +177,7 @@ if [ -z "$CONTAINER_ID" ]; then
             fi
 
             chmod +x ~/.local/share/nvim-linux64/bin/nvim
-
+            
             mkdir -p ~/.local/bin
             cd ~/.local/bin/ &&
             ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim
