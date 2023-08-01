@@ -12,12 +12,16 @@ PROJECT_PATH=$(realpath "$(pwd)")
 PROJECT_NAME=$(basename "$PROJECT_PATH")
 
 # Function to print colored messages
+# Function to print colored messages
 print_info() {
-    echo -e "[${GREEN}INFO${NC}] $1"
+    local message=$1
+    echo -e "[${GREEN}INFO${NC}] $message"
 }
 
+
 print_error() {
-    echo -e "[${RED}ERROR${NC}] $1"
+    local message=$1
+    echo -e "[${RED}ERROR${NC}] $message"
 }
 
 # Function to find the devcontainer.json file
