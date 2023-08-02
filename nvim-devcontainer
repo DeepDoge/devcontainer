@@ -71,18 +71,7 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    local volumes=$(GetProfileValue "volumes")
-    if [[ -n "$volumes" ]]; then
-        local volume=""
-        while IFS= read -r line; do
-            volume="$volume -v \"$line\""
-        done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
-        if [[ $? -ne 0 ]]; then
-            Panic "Failed to parse volumes."
-        fi
-        volume=$(ExpandVariables "$volume")
-        echo -e "$volume"
-    fi
+    echo $(echo "$json" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ' | ExpandVariables)
 }
 
 
