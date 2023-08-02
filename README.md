@@ -1,3 +1,11 @@
+This is in very early in development, and is not ready for use yet.
+
+Anything can change, directory paths, file names, repo name, behavior, etc.
+
+For now this is for nvim only but I plan to make it customizable for any terminal based editor.
+
+This thing basically creates and manages docker containers based on a devcontainer.json file in your project. It's implementing the behavior of VSCode devcontainers without vscode.
+
 # nvim-devcontainer
 
 `nvim-devcontainer` is a tool that allows you to build and run Docker containers with a NeoVim development environment based on a `devcontainer.json` file in your project. It provides an isolated NeoVim environment that can be shared between different projects, similar to the experience of [VSCode Dev Containers](https://code.visualstudio.com/docs/remote/containers).
