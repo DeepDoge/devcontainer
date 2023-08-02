@@ -202,7 +202,7 @@ if [ -z "$containerId" ]; then
 
     docker run --net=host -w "/workspaces/$projectName" \
         -v "$projectPath:/workspaces/$projectName" \
-        $(ProfileVolumesAsDockerRunArguments) \
+        $(ProfileVolumesAsDockerArgs) \
         -v "$homeDirectory/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
