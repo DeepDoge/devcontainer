@@ -222,9 +222,18 @@ docker exec -u "$CONFIG_REMOTE_USER" \
             $CONFIG_POST_START_COMMAND
         fi
 
-        $CONTAINER_HOME_DIRECTORY/.local/bin/nvim || echo \"[ERROR] Cannot start 'nvim', starting 'bash' for debugging.\" && bash
+        $CONTAINER_HOME_DIRECTORY/.local/bin/nvim
     "
 if [[ $? -ne 0 ]]; then
-    print_error "Attaching to the container failed."
+    print_error "Attaching to the container failed. Starting container with bash for debugging..."
+    docker exec -u "$CONFIG_REMOTE_USER" \
+        -e DISPLAY=$DISPLAY \
+        -w "/workspaces/$PROJECT_NAME" \
+        -it "$CONTAINER_ID" \
+        bash
+    if [[ $? -ne 0 ]]; then
+        print_error "Starting the container with bash failed."
+        exit 1
+    fi
     exit 1
 fi
