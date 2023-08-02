@@ -171,10 +171,12 @@ if [ -z "$CONTAINER_ID" ]; then
     docker exec -u "$CONFIG_REMOTE_USER" \
         -it "$CONTAINER_ID" \
         bash -c "
-            echo "[INFO] whoami: \$(whoami)"
-            echo "[INFO] id: \$(id)"
-            echo "[INFO] pwd: \$(pwd)"
-            echo "[INFO] ls -la: \$(ls -la)"
+            echo "[INFO] whoami: "
+            whoami
+            echo "[INFO] id: "
+            id
+            echo "[INFO] ls -la /workspaces: "
+            ls -la /workspaces
             
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
             sudo chown 755 /workspaces
