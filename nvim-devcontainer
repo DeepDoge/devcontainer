@@ -185,6 +185,7 @@ fi
 arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified."
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
 profile=$(cat "$profilePath") && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
+eval "profile=\"$profile\""
 
 
 
