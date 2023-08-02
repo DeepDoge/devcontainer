@@ -106,9 +106,6 @@ green='\033[0;32m'
 red='\033[0;31m'
 nc='\033[0m'
 
-nvimDownload="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
-lazyGitDownload="https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz"
-
 homeDirectory="$HOME"
 configDir="$homeDirectory/.config/nvim-devcontainer-dd"
 profilesDir="$configDir/profiles"
