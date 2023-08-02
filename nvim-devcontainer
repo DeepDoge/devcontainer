@@ -37,7 +37,8 @@ GetProfileValue() {
 ExecuteProfileCommand() {
     # profile commands are array of strings so we need to join them first
     # also profile commands might have $ variables so we need to expand them
-    local commands=$(GetProfileValue "commands")
+    local key="$1"
+    local commands=$(GetProfileValue $key)
     if [[ -n "$commands" ]]; then
         local command=""
         while IFS= read -r line; do
