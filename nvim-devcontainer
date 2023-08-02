@@ -230,9 +230,20 @@ if [ -z "$containerId" ]; then
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
         -d --label "$containerLabel" "$config_Image" bash -c "
-            sleep 10
-            while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
+            sleep 5
+            exitNextTime=0
+            while true; do
                 sleep 5
+                if [ \$exitNextTime -eq 1 ]; then
+                    if [ \$(ls /dev/pts | wc -l) -gt 1 ]; then
+                        break
+                    else
+                        exitNextTime=0
+                    fi
+                fi
+                if [ ! \$(ls /dev/pts | wc -l) -gt 1 ]; then
+                    exitNextTime=1
+                fi
             done
         " || Panic "Creating container failed."
 
