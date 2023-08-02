@@ -14,7 +14,7 @@ PrintCommand() {
     local message=$1
     local indentedMessage=$(echo -e "$message" | sed 's/^/    /')
     echo "" # newline
-    echo -e "$indentedMessage"
+    echo -e "${gray}$indentedMessage${nc}"
     echo "" # newline
 }
 
