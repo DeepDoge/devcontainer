@@ -1,39 +1,38 @@
 #!/bin/bash
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m'
+green='\033[0;32m'
+red='\033[0;31m'
+nc='\033[0m'
 
-HOME_DIRECTORY="${HOME}"
-CONFIG_PATH="${HOME_DIRECTORY}/.config/nvim-devcontainer-dd"
-NVIM_DOWNLOAD="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
-LAZY_GIT_DOWNLOAD="https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz"
+homeDirectory="${HOME}"
+configPath="${homeDirectory}/.config/nvim-devcontainer-dd"
+nvimDownload="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+lazyGitDownload="https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz"
 
-# If arguments is given, use them as project path, otherwise use current directory.
+# If arguments are given, use them as the project path; otherwise, use the current directory.
 if [[ -n "$@" ]]; then
-    PROJECT_PATH=$(realpath "$@")
+    projectPath=$(realpath "$@")
 else
-    PROJECT_PATH=$(realpath "$(pwd)")
+    projectPath=$(realpath "$(pwd)")
 fi
-PROJECT_NAME=$(basename "$PROJECT_PATH")
+projectName=$(basename "$projectPath")
 
 # Function to print colored messages
-print_info() {
+PrintInfo() {
     local message=$1
-    echo -e "[${GREEN}INFO${NC}] $message"
+    echo -e "[${green}INFO${nc}] $message"
 }
 
-
-print_error() {
+PrintError() {
     local message=$1
-    echo -e "[${RED}ERROR${NC}] $message"
+    echo -e "[${red}ERROR${nc}] $message"
 }
 
 # Function to find the devcontainer.json file
-find_devcontainer_json() {
+FindDevcontainerJson() {
     local paths=(
-        "$PROJECT_PATH/devcontainer.json"
-        "$PROJECT_PATH/.devcontainer/devcontainer.json"
+        "$projectPath/devcontainer.json"
+        "$projectPath/.devcontainer/devcontainer.json"
     )
 
     for path in "${paths[@]}"; do
@@ -45,24 +44,24 @@ find_devcontainer_json() {
 }
 
 # Function to read the content of devcontainer.json
-read_devcontainer_json() {
-    local devcontainer_json_path="$1"
-    sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$devcontainer_json_path"
+ReadDevcontainerJson() {
+    local devcontainerJsonPath="$1"
+    sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$devcontainerJsonPath"
 }
 
 # Function to get a value from devcontainer.json or devcontainer.metadata
-get_config_value() {
+GetConfigValue() {
     local key="$1"
 
-    local value=$(echo "$DEVCONTAINER_JSON" | jq -r ".${key}")
+    local value=$(echo "$devcontainerJson" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
         echo "$value"
         return
     fi
 
-    local metadata_value=$(echo "$IMAGE_DEVCONTAINER_METADATA" | jq -r ". | reverse | .[] | select(.${key} != null) | .${key}" | head -n 1)
-    if [[ "$metadata_value" != "" && "$metadata_value" != "null" ]]; then
-        echo "$metadata_value"
+    local metadataValue=$(echo "$imageDevcontainerMetadata" | jq -r ". | reverse | .[] | select(.${key} != null) | .${key}" | head -n 1)
+    if [[ "$metadataValue" != "" && "$metadataValue" != "null" ]]; then
+        echo "$metadataValue"
         return
     fi
 
@@ -70,174 +69,174 @@ get_config_value() {
 }
 
 # Main script
-DEVCONTAINER_JSON_PATH=$(find_devcontainer_json)
+devcontainerJsonPath=$(FindDevcontainerJson)
+devcontainerJsonDir=$(dirname "$devcontainerJsonPath")
 
-if [[ ! -f "$DEVCONTAINER_JSON_PATH" ]]; then
-    print_error "No devcontainer.json found."
+if [[ ! -f "$devcontainerJsonPath" ]]; then
+    PrintError "No devcontainer.json found."
     exit 1
 fi
 
-DEVCONTAINER_JSON=$(read_devcontainer_json "$DEVCONTAINER_JSON_PATH")
-if [[ -z "$DEVCONTAINER_JSON" ]]; then
-    print_error "No valid devcontainer.json found."
+devcontainerJson=$(ReadDevcontainerJson "$devcontainerJsonPath")
+if [[ -z "$devcontainerJson" ]]; then
+    PrintError "No valid devcontainer.json found."
     exit 1
 fi
 
-CONTAINER_ID=$(docker ps -aq -f "label=nvim-devcontainer-$PROJECT_PATH")
-CONTAINER_LABEL="nvim-devcontainer-$PROJECT_PATH"
-CONFIG_DOCKERFILE=$(get_config_value 'build.dockerfile')
+containerId=$(docker ps -aq -f "label=nvim-devcontainer-$projectPath")
+containerLabel="nvim-devcontainer-$projectPath"
+config_Dockerfile=$(GetConfigValue 'build.dockerfile')
 
-if [[ -n "$CONFIG_DOCKERFILE" ]]; then
-    DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
-    DOCKERFILE_PATH="$DEVCONTAINER_JSON_DIR/$CONFIG_DOCKERFILE"
-    CONFIG_IMAGE="nvim-devcontainer--$PROJECT_NAME--$(sha256sum "$DOCKERFILE_PATH" | awk '{print $1}')"
+if [[ -n "$config_Dockerfile" ]]; then
+    dockerfilePath="$devcontainerJsonDir/$config_Dockerfile"
+    config_Image="nvim-devcontainer--$projectName--$(sha256sum "$dockerfilePath" | awk '{print $1}')"
 else
-    CONFIG_IMAGE=$(get_config_value 'image')
-    if [[ -z "$CONFIG_IMAGE" ]]; then
-        print_error "No image specified in devcontainer.json."
+    config_Image=$(GetConfigValue 'image')
+    if [[ -z "$config_Image" ]]; then
+        PrintError "No image specified in devcontainer.json."
         exit 1
     fi
 fi
 
-print_info "Using Docker image \"$CONFIG_IMAGE\"..."
-IMAGE_DEVCONTAINER_METADATA=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$CONFIG_IMAGE")
+PrintInfo "Using Docker image \"$config_Image\"..."
+imageDevcontainerMetadata=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$config_Image")
 
-CONFIG_POST_CREATE_COMMAND=$(get_config_value 'postCreateCommand')
-CONFIG_POST_START_COMMAND=$(get_config_value 'postStartCommand')
-CONFIG_REMOTE_USER=$(get_config_value 'remoteUser')
-if [[ -z "$CONFIG_REMOTE_USER" ]]; then
-    CONFIG_REMOTE_USER="root"
-    CONTAINER_HOME_DIRECTORY="/root"
+config_PostCreateCommand=$(GetConfigValue 'postCreateCommand')
+config_PostStartCommand=$(GetConfigValue 'postStartCommand')
+config_RemoteUser=$(GetConfigValue 'remoteUser')
+if [[ -z "$config_RemoteUser" ]]; then
+    config_RemoteUser="root"
+    containerHomeDirectory="/root"
 else
-    CONTAINER_HOME_DIRECTORY="/home/$CONFIG_REMOTE_USER"
+    containerHomeDirectory="/home/$config_RemoteUser"
 fi
 
-if [ -z "$CONTAINER_ID" ]; then
-    if [[ -n "$CONFIG_DOCKERFILE" ]]; then
-        print_info "Building Docker image using $DOCKERFILE_PATH..."
-        docker build -t "$CONFIG_IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
+if [ -z "$containerId" ]; then
+    if [[ -n "$config_Dockerfile" ]]; then
+        PrintInfo "Building Docker image using $dockerfilePath..."
+        docker build -t "$config_Image" -f "$dockerfilePath" "$devcontainerJsonDir"
 
         if [[ $? -ne 0 ]]; then
-            print_error "Building Docker image failed."
+            PrintError "Building Docker image failed."
             exit 1
         fi
     else
-        print_info "Pulling Docker image \"$CONFIG_IMAGE\"..."
-        docker pull "$CONFIG_IMAGE"
+        PrintInfo "Pulling Docker image \"$config_Image\"..."
+        docker pull "$config_Image"
 
         if [[ $? -ne 0 ]]; then
-            print_error "Pulling Docker image failed."
+            PrintError "Pulling Docker image failed."
             exit 1
         fi
     fi
 
-    print_info "Creating container for \"$PROJECT_PATH\" project..."
+    PrintInfo "Creating container for \"$projectPath\" project..."
 
-    mkdir -p "$CONFIG_PATH/nvim/config"
-    mkdir -p "$CONFIG_PATH/nvim/cache"
-    mkdir -p "$CONFIG_PATH/nvim/local/state"
-    mkdir -p "$CONFIG_PATH/nvim/local/share/nvim"
-    mkdir -p "$CONFIG_PATH/nvim/local/share/nvim-linux64"
+    mkdir -p "$configPath/nvim/config"
+    mkdir -p "$configPath/nvim/cache"
+    mkdir -p "$configPath/nvim/local/state"
+    mkdir -p "$configPath/nvim/local/share/nvim"
+    mkdir -p "$configPath/nvim/local/share/nvim-linux64"
 
-    docker run --net=host -w "/workspaces/$PROJECT_NAME" \
-        -v "$PROJECT_PATH:/workspaces/$PROJECT_NAME" \
-        -v "$CONFIG_PATH/nvim/config:$CONTAINER_HOME_DIRECTORY/.config/nvim" \
-        -v "$CONFIG_PATH/nvim/cache:$CONTAINER_HOME_DIRECTORY/.cache/nvim" \
-        -v "$CONFIG_PATH/nvim/local/state:$CONTAINER_HOME_DIRECTORY/.local/state/nvim" \
-        -v "$CONFIG_PATH/nvim/local/share/nvim:$CONTAINER_HOME_DIRECTORY/.local/share/nvim" \
-        -v "$CONFIG_PATH/nvim/local/share/nvim-linux64:$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64" \
-        -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
+    docker run --net=host -w "/workspaces/$projectName" \
+        -v "$projectPath:/workspaces/$projectName" \
+        -v "$configPath/nvim/config:$containerHomeDirectory/.config/nvim" \
+        -v "$configPath/nvim/cache:$containerHomeDirectory/.cache/nvim" \
+        -v "$configPath/nvim/local/state:$containerHomeDirectory/.local/state/nvim" \
+        -v "$configPath/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim" \
+        -v "$configPath/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64" \
+        -v "$homeDirectory/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
-        -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" sh -c "
+        -d --label "$containerLabel" "$config_Image" sh -c "
             sleep 5
             while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 5
             done
         "
     if [[ $? -ne 0 ]]; then
-        print_error "Creating the container failed."
+        PrintError "Creating the container failed."
         exit 1
     fi
 
-    CONTAINER_ID=$(docker ps -aq -f "label=$CONTAINER_LABEL")
-    print_info "Container created with ID \"$CONTAINER_ID\"."
+    containerId=$(docker ps -aq -f "label=$containerLabel")
+    PrintInfo "Container created with ID \"$containerId\"."
 
-    print_info "Initializing container..."
+    PrintInfo "Initializing container..."
 
-    docker exec -u "$CONFIG_REMOTE_USER" \
-        -it "$CONTAINER_ID" \
+    docker exec -u "$config_RemoteUser" \
+        -it "$containerId" \
         sh -c "            
-            sudo chown -R $CONFIG_REMOTE_USER /workspaces
-            sudo chown -R $CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
+            sudo chown -R $config_RemoteUser /workspaces
+            sudo chown -R $config_RemoteUser $containerHomeDirectory
 
-            if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
+            if [ ! -f $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
-                curl -LO \"$NVIM_DOWNLOAD\" &&
+                curl -LO \"$nvimDownload\" &&
                 tar xzf nvim-linux64.tar.gz &&
-                mkdir -p $CONTAINER_HOME_DIRECTORY/.local/share &&
-                mv ./nvim-linux64/* $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/
+                mkdir -p $containerHomeDirectory/.local/share &&
+                mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/
             fi
 
-            chmod +x \"$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim\"
+            chmod +x \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\"
             
-            mkdir -p $CONTAINER_HOME_DIRECTORY/.local/bin
-            cd $CONTAINER_HOME_DIRECTORY/.local/bin/ &&
-            ln -sf $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim nvim
+            mkdir -p $containerHomeDirectory/.local/bin
+            cd $containerHomeDirectory/.local/bin/ &&
+            ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim nvim
         "
     if [[ $? -ne 0 ]]; then
-        print_error "Initializing the container failed."
-        docker rm -f "$CONTAINER_ID"
+        PrintError "Initializing the container failed."
+        docker rm -f "$containerId"
         exit 1
     fi
 
-    if [[ -n "$CONFIG_POST_CREATE_COMMAND" ]]; then
-        print_info "Executing postCreateCommand..."
-        docker exec -u "$CONFIG_REMOTE_USER" -it "$CONTAINER_ID" bash -c "$CONFIG_POST_CREATE_COMMAND"
+    if [[ -n "$config_PostCreateCommand" ]]; then
+        PrintInfo "Executing postCreateCommand..."
+        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$config_PostCreateCommand"
         if [[ $? -ne 0 ]]; then
-            print_error "Executing postCreateCommand failed."
-            docker rm -f "$CONTAINER_ID"
+            PrintError "Executing postCreateCommand failed."
+            docker rm -f "$containerId"
             exit 1
         fi
     fi
 fi
 
-if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; then
-    print_info "Starting container \"$CONTAINER_ID\"..."
-    docker start "$CONTAINER_ID"
+if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; then
+    PrintInfo "Starting container \"$containerId\"..."
+    docker start "$containerId"
     if [[ $? -ne 0 ]]; then
-        print_error "Starting the container failed."
+        PrintError "Starting the container failed."
         exit 1
     fi
 fi
 
-print_info "Attaching to the container \"$CONTAINER_ID\" project..."
+PrintInfo "Attaching to the container \"$containerId\" project..."
 
-attacing_failed() {
-    print_error "Attaching to the container failed."
-    print_info "Attaching the container with bash for debugging..."
-    docker exec -u "$CONFIG_REMOTE_USER" \
-        -it "$CONTAINER_ID" \
+AttachingFailed() {
+    PrintError "Attaching to the container failed."
+    PrintInfo "Attaching the container with bash for debugging..."
+    docker exec -u "$config_RemoteUser" \
+        -it "$containerId" \
         bash
     exit 1
 }
 
-if [[ -n "$CONFIG_POST_CREATE_COMMAND" ]]; then
-    print_info "Executing postStartCommand..."
-    docker exec -u "$CONFIG_REMOTE_USER" -it "$CONTAINER_ID" bash -c "$CONFIG_POST_START_COMMAND"
+if [[ -n "$config_PostCreateCommand" ]]; then
+    PrintInfo "Executing postStartCommand..."
+    docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$config_PostStartCommand"
     if [[ $? -ne 0 ]]; then
-        print_error "Executing postStartCommand failed."
-        attacing_failed
+        PrintError "Executing postStartCommand failed."
+        AttachingFailed
     fi
 fi
 
-docker exec -u "$CONFIG_REMOTE_USER" \
-    -it "$CONTAINER_ID" \
+docker exec -u "$config_RemoteUser" \
+    -it "$containerId" \
     bash -c "
-        $CONTAINER_HOME_DIRECTORY/.local/bin/nvim
+        $containerHomeDirectory/.local/bin/nvim
     "
 if [[ $? -ne 0 ]]; then
-    attacing_failed
+    AttachingFailed
 fi
