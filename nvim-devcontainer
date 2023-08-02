@@ -167,6 +167,7 @@ if [ -z "$CONTAINER_ID" ]; then
     print_info "Initializing container..."
 
     docker exec -u "$CONFIG_REMOTE_USER" \
+        -e DISPLAY=$DISPLAY \
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash -c "
