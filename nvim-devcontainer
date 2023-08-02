@@ -2,22 +2,31 @@
 
 green='\033[0;32m'
 red='\033[0;31m'
+gray='\033[0;37m'
 nc='\033[0m'
 
 PrintInfo() {
     local message=$1
-    echo -e "[${green}INFO${nc}] $message"
+    echo $"[${green}INFO${nc}] $message"
+}
+
+PrintCommand() {
+    local message=$1
+    local indentedMessage=$(echo $"$message" | sed 's/^/    /')
+    echo "" # newline
+    echo $"$indentedMessage"
+    echo "" # newline
 }
 
 PrintError() {
     local message=$1
-    echo -e "[${red}ERROR${nc}] $message"
+    echo $"[${red}ERROR${nc}] $message"
 }
 
 Panic() {
     local message=$1
     local beforeExit=$2
-    PrintError "$message"
+    PrintError $"$message"
     [[ -n "$beforeExit" ]] && $beforeExit
     exit 1
 }
@@ -50,8 +59,8 @@ ExecuteProfileCommand() {
             return 1
         fi
         local expanded_commands=$(ExpandVariables "$commands")
-        echo "Executing profile command $key..."
-        echo $"$expanded_commands"
+        PrintInfo "Executing profile command $key..."
+        PrintCommand "$expanded_commands"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
@@ -117,6 +126,7 @@ ExecuteConfigCommand() {
 
     if [[ -n "$command" ]]; then
         PrintInfo "Executing config command $key..."
+        PrintCommand "$command"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
