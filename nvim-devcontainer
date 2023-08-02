@@ -92,6 +92,11 @@ ExecuteCommand() {
     return 0
 }
 
+AttachWithBash() {
+    PrintInfo "Attaching the container with bash..."
+    docker exec -u "$config_RemoteUser" -it "$containerId" bash
+}
+
 # Main script
 devcontainerJsonPath=$(FindDevcontainerJson) && [[ ! -f "$devcontainerJsonPath" ]] && Panic "No devcontainer.json found."
 devcontainerJsonDir=$(dirname "$devcontainerJsonPath")
@@ -193,10 +198,7 @@ fi
 PrintInfo "Attaching to the container \"$containerId\" project..."
 
 AttachingFailed() {
-    PrintError "Attaching to the container failed."
-    PrintInfo "Attaching the container with bash for debugging..."
-    docker exec -u "$config_RemoteUser" -it "$containerId" bash
-    exit 1
+    Panic "Attaching to the container failed." "AttachWithBash"
 }
 
 if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; then
@@ -205,4 +207,5 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; th
     ExecuteCommand "postStartCommand" || AttachingFailed
 fi
 
+ExecuteCommand "postAttachCommand" || AttachingFailed
 docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$containerHomeDirectory/.local/bin/nvim" || AttachingFailed
