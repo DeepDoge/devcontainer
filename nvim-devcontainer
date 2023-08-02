@@ -158,8 +158,6 @@ if [ -z "$CONTAINER_ID" ]; then
                 mkdir -p $CONTAINER_HOME_DIRECTORY/.local/share &&
                 mv ./nvim-linux64/* $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/
             fi
-
-            chmod +x \"$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim\"
             
             mkdir -p $CONTAINER_HOME_DIRECTORY/.local/bin
             cd $CONTAINER_HOME_DIRECTORY/.local/bin/ &&
@@ -201,6 +199,8 @@ docker exec -u "$CONFIG_REMOTE_USER" \
         sudo chown 755 /workspaces
         sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
         sudo chown 755 $CONTAINER_HOME_DIRECTORY
+
+        chmod +x \"$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim\"
 
         if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
             echo \"[INFO] Executing postStartCommand...\"
