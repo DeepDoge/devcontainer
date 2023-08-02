@@ -219,8 +219,6 @@ if [ -z "$containerId" ]; then
 
     PrintInfo "Creating container for \"$projectPath\" project..."
 
-    echo $(ProfileVolumesAsDockerArgs)
-
     docker run --net=host -w "/workspaces/$projectName" \
         -v "$projectPath:/workspaces/$projectName" \
         $(ProfileVolumesAsDockerArgs) \
