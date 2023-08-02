@@ -220,7 +220,7 @@ if [ -z "$containerId" ]; then
     PrintInfo "Initializing container..."
 
     InitializationPanic() {
-        Panic "Initialization failed." "AttachWithBash" #"docker rm -f $containerId"
+        Panic "Initialization failed." "docker exec -u \"$config_RemoteUser\" -it \"$containerId\" bash"
     }
 
     docker exec -u "$config_RemoteUser" \
