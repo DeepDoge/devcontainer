@@ -155,6 +155,8 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$CONFIG_PATH/nvim/local/share/nvim-linux64:$CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64" \
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
+        -e CHOWN_EXTRA="/workspaces/$PROJECT_NAME" \
+        -e CHOWN_EXTRA_OPTS="-R" \
         -u root \
         -it -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
