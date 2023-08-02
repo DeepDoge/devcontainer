@@ -64,19 +64,6 @@ get_config_value() {
     echo ""
 }
 
-# Function to pull the Docker image
-pull_docker_image() {
-    local image="$1"
-
-    print_info "Pulling Docker image \"$image\"..."
-    docker pull "$image"
-
-    if [[ $? -ne 0 ]]; then
-        print_error "Pulling Docker image failed."
-        exit 1
-    fi
-}
-
 # Main script
 DEVCONTAINER_JSON_PATH=$(find_devcontainer_json)
 
@@ -132,7 +119,13 @@ if [ -z "$CONTAINER_ID" ]; then
             exit 1
         fi
     else
-        pull_docker_image "$CONFIG_IMAGE"
+        print_info "Pulling Docker image \"$CONFIG_IMAGE\"..."
+        docker pull "$CONFIG_IMAGE"
+
+        if [[ $? -ne 0 ]]; then
+            print_error "Pulling Docker image failed."
+            exit 1
+        fi
     fi
 
     print_info "Creating container for \"$PROJECT_PATH\" project..."
