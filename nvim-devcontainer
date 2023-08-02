@@ -2,6 +2,10 @@
 
 set -e # Exit on error
 
+green='\033[0;32m'
+red='\033[0;31m'
+nc='\033[0m'
+
 PrintInfo() {
     local message=$1
     echo -e "[${green}INFO${nc}] $message"
@@ -63,7 +67,7 @@ ProfileVolumesAsDockerArgs() {
     if [[ -n "$volumes" ]]; then
         local volume=""
         while IFS= read -r line; do
-            volume="$volume -v \"$line\""
+            volume="$volume -v \"$("$line" | sed 's/[^a-zA-Z0-9\/\:\.\-\_]//g')\""
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse volumes."
@@ -92,13 +96,13 @@ FindProjectConfig() {
 GetConfigValue() {
     local key="$1"
 
-    local value=$(echo "$projectConfig" | jq -r ".${key}")
+    local value=$(echo "$projectConfig" | jq -r ".$key")
     if [[ "$value" != "null" ]]; then
         echo "$value"
         return
     fi
 
-    local metadataValue=$(echo "$imageConfig" | jq -r ". | reverse | .[] | select(.${key} != null) | .${key}" | head -n 1)
+    local metadataValue=$(echo "$imageConfig" | jq -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
     if [[ "$metadataValue" != "" && "$metadataValue" != "null" ]]; then
         echo "$metadataValue"
         return
@@ -122,10 +126,6 @@ ExecuteConfigCommand() {
 
     return 0
 }
-
-green='\033[0;32m'
-red='\033[0;31m'
-nc='\033[0m'
 
 homeDirectory="$HOME"
 configDir="$homeDirectory/.config/nvim-devcontainer-dd"
@@ -204,7 +204,7 @@ if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
 fi
 arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
-profile=$(cat "$profilePath") && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
+profile=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$profilePath") && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
 
 
 if [ -z "$containerId" ]; then
@@ -224,7 +224,7 @@ if [ -z "$containerId" ]; then
         -v "$homeDirectory/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
-        -e DISPLAY=$DISPLAY \
+        -e DISPLAY="$DISPLAY" \
         -e SHELL=/bin/bash \
         -d --label "$containerLabel" "$config_Image" bash -c "
             sleep 10
