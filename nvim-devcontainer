@@ -162,9 +162,6 @@ defaultProfile='{
         ],
         "env": {},
         "installCommand": [
-            "chown -R $config_RemoteUser \"workspaces\"",
-            "chown -R $config_RemoteUser $containerHomeDirectory",
-
             "if [ ! -f \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\" ]; then",
             "    echo \"Downloading Neovim...\"",
             "    cd /tmp &&",
@@ -227,6 +224,11 @@ if [ -z "$containerId" ]; then
     InitializationPanic() {
         Panic "Initialization failed." "docker rm -f \"$containerId\""
     }
+
+    docker exec -u root "$containerId" bash -c "
+            chown -R $config_RemoteUser /workspaces &&
+            chown -R $config_RemoteUser $containerHomeDirectory
+        " || InitializationPanic
 
     ExecuteProfileCommand "installCommand" || InitializationPanic
     ExecuteConfigCommand "postCreateCommand" || InitializationPanic
