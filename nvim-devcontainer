@@ -13,9 +13,9 @@ PrintInfo() {
 PrintCommand() {
     local message=$1
     local indentedMessage=$(echo -e "$message" | sed 's/^/    /')
-    echo "" # newline
+    echo -e "" # newline
     echo -e "${comment}$indentedMessage${nc}"
-    echo "" # newline
+    echo -e "" # newline
 }
 
 PrintError() {
@@ -39,13 +39,13 @@ ExpandVariables() {
 
 GetProfileValue() {
     local key="$1"
-    local value=$(echo "$profile" | jq -r ".${key}")
+    local value=$(echo -e "$profile" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
-        echo "$value"
+        echo -e "$value"
         return
     fi
 
-    echo ""
+    echo -e ""
 }
 
 ExecuteProfileCommand() {
@@ -53,7 +53,7 @@ ExecuteProfileCommand() {
     local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
-        local commands=$(echo "$profile_commands" | jq -r 'join("\n")')
+        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")')
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse $key commands."
             return 1
@@ -83,7 +83,7 @@ ProfileVolumesAsDockerArgs() {
             return 1
         fi
         volume=$(ExpandVariables "$volume")
-        echo "$volume"
+        echo -e "$volume"
     fi
 }
 
@@ -96,7 +96,7 @@ FindProjectConfig() {
 
     for path in "${paths[@]}"; do
         if [[ -f "$path" ]]; then
-            echo "$path"
+            echo -e "$path"
             return
         fi
     done
@@ -105,19 +105,19 @@ FindProjectConfig() {
 GetConfigValue() {
     local key="$1"
 
-    local value=$(echo "$projectConfig" | jq -r ".$key")
+    local value=$(echo -e "$projectConfig" | jq -r ".$key")
     if [[ "$value" != "null" ]]; then
-        echo "$value"
+        echo -e "$value"
         return
     fi
 
-    local metadataValue=$(echo "$imageConfig" | jq -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
+    local metadataValue=$(echo -e "$imageConfig" | jq -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
     if [[ "$metadataValue" != "" && "$metadataValue" != "null" ]]; then
-        echo "$metadataValue"
+        echo -e "$metadataValue"
         return
     fi
 
-    echo ""
+    echo -e ""
 }
 
 ExecuteConfigCommand() {
@@ -210,7 +210,7 @@ defaultProfile='{
 
 mkdir -p "$profilesDir"
 if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
-    echo "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
+    echo -e "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
 fi
 arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
