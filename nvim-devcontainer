@@ -107,8 +107,6 @@ CONFIG_POST_START_COMMAND=$(get_config_value 'postStartCommand')
 CONFIG_REMOTE_USER=$(get_config_value 'remoteUser')
 if [[ -z "$CONFIG_REMOTE_USER" ]]; then
     CONFIG_REMOTE_USER="root"
-fi
-if [[ "$CONFIG_REMOTE_USER" == "root" ]]; then
     CONTAINER_HOME_DIRECTORY="/root"
 else
     CONTAINER_HOME_DIRECTORY="/home/$CONFIG_REMOTE_USER"
