@@ -97,27 +97,14 @@ CONFIG_DOCKERFILE=$(get_config_value 'build.dockerfile')
 
 if [[ -n "$CONFIG_DOCKERFILE" ]]; then
     DEVCONTAINER_JSON_DIR=$(dirname "$DEVCONTAINER_JSON_PATH")
-    
     DOCKERFILE_PATH="$DEVCONTAINER_JSON_DIR/$CONFIG_DOCKERFILE"
     CONFIG_IMAGE="nvim-devcontainer--$PROJECT_NAME--$(sha256sum "$DOCKERFILE_PATH" | awk '{print $1}')"
-    
-    if [ -z "$CONTAINER_ID" ]; then
-        print_info "Building Docker image using $DOCKERFILE_PATH..."
-        docker build -t "$CONFIG_IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
-
-        if [[ $? -ne 0 ]]; then
-            print_error "Building Docker image failed."
-            exit 1
-        fi
-    fi
 else
     CONFIG_IMAGE=$(get_config_value 'image')
     if [[ -z "$CONFIG_IMAGE" ]]; then
         print_error "No image specified in devcontainer.json."
         exit 1
     fi
-
-    pull_docker_image "$CONFIG_IMAGE"
 fi
 
 print_info "Using Docker image \"$CONFIG_IMAGE\"..."
@@ -138,6 +125,18 @@ else
 fi
 
 if [ -z "$CONTAINER_ID" ]; then
+    if [[ -n "$CONFIG_DOCKERFILE" ]]; then
+        print_info "Building Docker image using $DOCKERFILE_PATH..."
+        docker build -t "$CONFIG_IMAGE" -f "$DOCKERFILE_PATH" "$DEVCONTAINER_JSON_DIR"
+
+        if [[ $? -ne 0 ]]; then
+            print_error "Building Docker image failed."
+            exit 1
+        fi
+    else
+        pull_docker_image "$CONFIG_IMAGE"
+    fi
+
     print_info "Creating container for \"$PROJECT_PATH\" project..."
 
     mkdir -p "$CONFIG_PATH/nvim/config"
