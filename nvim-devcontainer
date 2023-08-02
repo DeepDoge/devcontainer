@@ -203,6 +203,7 @@ arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name spec
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
 profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
 
+# All variables are ready at this point
 
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
