@@ -168,6 +168,7 @@ if [ -z "$CONTAINER_ID" ]; then
 
     docker exec -u "$CONFIG_REMOTE_USER" \
         -e DISPLAY=$DISPLAY \
+        -e SHELL=/bin/bash \
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash -c "
@@ -215,6 +216,7 @@ fi
 print_info "Attaching to the container \"$CONTAINER_ID\" project..."
 docker exec -u "$CONFIG_REMOTE_USER" \
     -e DISPLAY=$DISPLAY \
+    -e SHELL=/bin/bash \
     -w "/workspaces/$PROJECT_NAME" \
     -it "$CONTAINER_ID" \
     bash -c "
@@ -230,6 +232,7 @@ if [[ $? -ne 0 ]]; then
     print_info "Attaching the container with bash for debugging..."
     docker exec -u "$CONFIG_REMOTE_USER" \
         -e DISPLAY=$DISPLAY \
+        -e SHELL=/bin/bash \
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash
