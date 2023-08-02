@@ -229,23 +229,23 @@ if [ -z "$containerId" ]; then
         -u root \
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
-        -d --label "$containerLabel" "$config_Image" bash -c "
+        -d --label "$containerLabel" "$config_Image" bash -c '
             sleep 5
-            exitNextTime=0
+            export exitNextTime=0
             while true; do
-                sleep 5
-                if [ \$exitNextTime -eq 1 ]; then
-                    if [ \$(ls /dev/pts | wc -l) -gt 1 ]; then
-                        break
-                    else
-                        exitNextTime=0
-                    fi
+            sleep 5
+            if [ "$exitNextTime" -eq 1 ]; then
+                if [ "$(ls /dev/pts | wc -l)" -gt 1 ]; then
+                    break
+                else
+                    export exitNextTime=0
                 fi
-                if [ ! \$(ls /dev/pts | wc -l) -gt 1 ]; then
-                    exitNextTime=1
-                fi
-            done
-        " || Panic "Creating container failed."
+            fi
+            if [ ! "$(ls /dev/pts | wc -l)" -gt 1 ]; then
+                export exitNextTime=1
+            fi
+        done
+    ' || Panic "Creating container failed."
 
     containerId=$(docker ps -aq -f "label=$containerLabel")
     PrintInfo "Container created with ID \"$containerId\"."
