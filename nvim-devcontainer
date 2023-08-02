@@ -10,7 +10,7 @@ NVIM_TAR_GZ_LINK="https://github.com/neovim/neovim/releases/latest/download/nvim
 
 # If arguments is given, use them as project path, otherwise use current directory.
 if [[ -n "$@" ]]; then
-    PROJECT_PATH="$@"
+    PROJECT_PATH=$(realpath "$@")
 else
     PROJECT_PATH=$(realpath "$(pwd)")
 fi
