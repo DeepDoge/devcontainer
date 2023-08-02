@@ -38,6 +38,7 @@ To uninstall `nvim-devcontainer`, run the following command in your terminal:
 
 ```bash
 rm ~/.local/bin/nvim-devcontainer
+rm -rf ~/.config/@deepdoge/nvim-devcontainer
 ```
 
 ## Usage
