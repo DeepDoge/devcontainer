@@ -113,50 +113,6 @@ homeDirectory="$HOME"
 configDir="$homeDirectory/.config/nvim-devcontainer-dd"
 profilesDir="$configDir/profiles"
 
-mkdir -p "$profilesDir"
-
-defaultProfileName="nvim"
-defaultProfile() {
-    echo '{
-        "volumes": [
-            "$configDir/nvim/config:$containerHomeDirectory/.config/nvim",
-            "$configDir/nvim/cache:$containerHomeDirectory/.cache/nvim",
-            "$configDir/nvim/local/state:$containerHomeDirectory/.local/state",
-            "$configDir/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim",
-            "$configDir/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64"
-        ],
-        "env": {},
-        "installCommand": [
-            "chown -R $config_RemoteUser \"workspaces\"",
-            "chown -R $config_RemoteUser $containerHomeDirectory",
-
-            "if [ ! -f \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\" ]; then",
-            "    echo \"Downloading Neovim...\"",
-            "    cd /tmp &&",
-            "    curl -LO \"$nvimDownload\"",
-            "    tar xzf nvim-linux64.tar.gz &&",
-            "    mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/ &&",
-            "    rm -rf /tmp/nvim-linux64.tar.gz /tmp/nvim-linux64",
-            "fi",
-
-            "chmod +x $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim &&",
-
-            "mkdir -p $containerHomeDirectory/.local/bin &&",
-            "ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim $containerHomeDirectory/.local/bin/nvim &&"
-        ],
-        "attachCommand": ["nvim"]
-    }'
-}
-
-# if there are no profiles, create a default one
-if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
-    echo "$(defaultProfile)" >"$profilesDir/$defaultProfileName.json"
-fi
-
-arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified."
-profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
-profile=$(cat "$profilePath") && [[ -z "$profileJson" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
-
 arg_ProjectPath=""
 for ((i = 2; i <= $#; i++)); do
     arg_ProjectPath="$arg_ProjectPath ${!i}"
@@ -192,6 +148,50 @@ if [[ -z "$config_RemoteUser" ]]; then
 else
     containerHomeDirectory="/home/$config_RemoteUser"
 fi
+
+
+
+defaultProfileName="nvim"
+defaultProfile='{
+        "volumes": [
+            "$configDir/nvim/config:$containerHomeDirectory/.config/nvim",
+            "$configDir/nvim/cache:$containerHomeDirectory/.cache/nvim",
+            "$configDir/nvim/local/state:$containerHomeDirectory/.local/state",
+            "$configDir/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim",
+            "$configDir/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64"
+        ],
+        "env": {},
+        "installCommand": [
+            "chown -R $config_RemoteUser \"workspaces\"",
+            "chown -R $config_RemoteUser $containerHomeDirectory",
+
+            "if [ ! -f \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\" ]; then",
+            "    echo \"Downloading Neovim...\"",
+            "    cd /tmp &&",
+            "    curl -LO \"$nvimDownload\"",
+            "    tar xzf nvim-linux64.tar.gz &&",
+            "    mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/ &&",
+            "    rm -rf /tmp/nvim-linux64.tar.gz /tmp/nvim-linux64",
+            "fi",
+
+            "chmod +x $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim &&",
+
+            "mkdir -p $containerHomeDirectory/.local/bin &&",
+            "ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim $containerHomeDirectory/.local/bin/nvim &&"
+        ],
+        "attachCommand": ["nvim"]
+    }'
+
+mkdir -p "$profilesDir"
+if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
+    echo "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
+fi
+arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified."
+profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
+profile=$(cat "$profilePath") && [[ -z "$profileJson" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
+
+
+
 
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
