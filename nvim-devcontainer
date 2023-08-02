@@ -249,6 +249,7 @@ if [ -z "$containerId" ]; then
             sudo chown -R $config_RemoteUser $containerHomeDir
         " || InitializationPanic
 
+    ExecuteProfileCommand "installCommand" || InitializationPanic
     ExecuteConfigCommand "postCreateCommand" || InitializationPanic
 fi
 
