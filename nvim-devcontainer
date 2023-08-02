@@ -25,7 +25,7 @@ Panic() {
 ExpandVariables() {
     # using envsubst
     local value="$1"
-    echo $(source <(echo "echo \"$value\""))
+    printf $(source <(printf "printf \"$value\""))
 }
 
 GetProfileValue() {
@@ -204,7 +204,7 @@ if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
 fi
 arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
-profile=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$profilePath") && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
+profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
 
 
 if [ -z "$containerId" ]; then
