@@ -223,7 +223,7 @@ if [ -z "$containerId" ]; then
         $(ProfileVolumesAsDockerArgs) \
         -v "$homeDirectory/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
-        -u root \
+        -u "$config_RemoteUser" \
         -e DISPLAY="$DISPLAY" \
         -e SHELL=/bin/bash \
         -d --label "$containerLabel" "$config_Image" bash -c "
