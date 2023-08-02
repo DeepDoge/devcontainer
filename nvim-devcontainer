@@ -152,7 +152,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
-            sleep 5
+            sleep 15
             while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 5
             done
