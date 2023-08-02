@@ -18,7 +18,6 @@ fi
 PROJECT_NAME=$(basename "$PROJECT_PATH")
 
 # Function to print colored messages
-# Function to print colored messages
 print_info() {
     local message=$1
     echo -e "[${GREEN}INFO${NC}] $message"
@@ -153,7 +152,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             while true; do
                 sleep 5
-                if [ -z \"\$(ls /dev/pts/ptmx)\" ]; then
+                if [ "$(ls /dev/pts | wc -l)" -le 1 ]; then
                     break
                 fi
             done
