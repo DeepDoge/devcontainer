@@ -163,6 +163,7 @@ if [ -z "$CONTAINER_ID" ]; then
     fi
 
     CONTAINER_ID=$(docker ps -aq -f "label=$CONTAINER_LABEL")
+    print_info "Container created with ID \"$CONTAINER_ID\"."
 
     print_info "Initializing container..."
 
