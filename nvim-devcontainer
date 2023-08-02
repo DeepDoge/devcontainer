@@ -143,9 +143,9 @@ imageConfig=$(docker inspect --format='{{index .Config.Labels "devcontainer.meta
 config_RemoteUser=$(GetConfigValue 'remoteUser')
 if [[ -z "$config_RemoteUser" ]]; then
     config_RemoteUser="root"
-    containerHomeDirectory="/root"
+    containerHomeDir="/root"
 else
-    containerHomeDirectory="/home/$config_RemoteUser"
+    containerHomeDir="/home/$config_RemoteUser"
 fi
 
 
@@ -153,27 +153,27 @@ fi
 defaultProfileName="nvim"
 defaultProfile='{
     "volumes": [
-        "$configDir/nvim/config:$containerHomeDirectory/.config/nvim",
-        "$configDir/nvim/cache:$containerHomeDirectory/.cache/nvim",
-        "$configDir/nvim/local/state:$containerHomeDirectory/.local/state",
-        "$configDir/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim",
-        "$configDir/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64"
+        "$configDir/nvim/config:$containerHomeDir/.config/nvim",
+        "$configDir/nvim/cache:$containerHomeDir/.cache/nvim",
+        "$configDir/nvim/local/state:$containerHomeDir/.local/state",
+        "$configDir/nvim/local/share/nvim:$containerHomeDir/.local/share/nvim",
+        "$configDir/nvim/local/share/nvim-linux64:$containerHomeDir/.local/share/nvim-linux64"
     ],
     "env": {},
     "installCommand": [
-        "if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then",
+        "if [ ! -f $containerHomeDir/.local/share/nvim-linux64/bin/nvim ]; then",
         "    cd /tmp &&",
         "    curl -LO \"https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz\" &&",
         "    tar xzf nvim-linux64.tar.gz &&",
-        "    mkdir -p ~/.local/share &&",
-        "    mv ./nvim-linux64/* ~/.local/share/nvim-linux64/",
+        "    mkdir -p $containerHomeDir/.local/share &&",
+        "    mv ./nvim-linux64/* $containerHomeDir/.local/share/nvim-linux64/",
         "fi",
         "",
-        "chmod +x \"~/.local/share/nvim-linux64/bin/nvim\"",
+        "chmod +x \"$containerHomeDir/.local/share/nvim-linux64/bin/nvim\"",
         "",
-        "mkdir -p ~/.local/bin",
-        "cd ~/.local/bin/ &&",
-        "ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim"
+        "mkdir -p $containerHomeDir/.local/bin",
+        "cd $containerHomeDir/.local/bin/ &&",
+        "ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim"
     ],
     "attachCommand": ["nvim"]
 }';
@@ -227,7 +227,7 @@ if [ -z "$containerId" ]; then
         -it "$containerId" \
         bash -c "            
             sudo chown -R $config_RemoteUser /workspaces
-            sudo chown -R $config_RemoteUser $containerHomeDirectory
+            sudo chown -R $config_RemoteUser $containerHomeDir
         " || InitializationPanic
 
     ExecuteProfileCommand "installCommand" || InitializationPanic
