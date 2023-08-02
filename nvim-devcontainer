@@ -27,12 +27,7 @@ Panic() {
 ExpandVariables() {
     # using envsubst
     local value="$1"
-    local expandedValue=$(echo "$value" | envsubst)
-    if [[ $? -ne 0 ]]; then
-        PrintError "Failed to expand variables."
-        return 1
-    fi
-    echo "$expandedValue"
+    echo $(source <(echo "echo \"$value\""))
 }
 
 GetProfileValue() {
