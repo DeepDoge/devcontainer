@@ -9,6 +9,7 @@ Not all `devcontainer.json` configurations are supported yet. The following conf
 - `build.dockerfile`
 - `postCreateCommand`
 - `postStartCommand`
+- `postAttachCommand`
 
 ## Features
 
