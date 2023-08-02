@@ -7,20 +7,20 @@ nc='\033[0m'
 
 PrintInfo() {
     local message=$1
-    echo $"[${green}INFO${nc}] $message"
+    echo -e "[${green}INFO${nc}] $message"
 }
 
 PrintCommand() {
     local message=$1
-    local indentedMessage=$(echo $"$message" | sed 's/^/    /')
+    local indentedMessage=$(echo -e "$message" | sed 's/^/    /')
     echo "" # newline
-    echo $"$indentedMessage"
+    echo -e "$indentedMessage"
     echo "" # newline
 }
 
 PrintError() {
     local message=$1
-    echo $"[${red}ERROR${nc}] $message"
+    echo -e "[${red}ERROR${nc}] $message"
 }
 
 Panic() {
@@ -34,7 +34,7 @@ Panic() {
 ExpandVariables() {
     # using envsubst
     local value="$1"
-    echo $"$(source <(echo $"echo \$\"$value\""))"
+    echo -e "$(source <(echo -e "echo \$\"$value\""))"
 }
 
 GetProfileValue() {
