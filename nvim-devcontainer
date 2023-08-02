@@ -42,6 +42,10 @@ ExecuteProfileCommand() {
 
     if [ -n "$profile_commands" ]; then
         local commands=$(echo "$profile_commands" | jq -r 'join("\n")')
+        if [[ $? -ne 0 ]]; then
+            PrintError "Failed to parse $key commands."
+            return 1
+        fi
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key..."
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
@@ -62,6 +66,10 @@ ProfileVolumesAsDockerArgs() {
         while IFS= read -r line; do
             volume="$volume -v \"$line\""
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
+        if [[ $? -ne 0 ]]; then
+            PrintError "Failed to parse volumes."
+            return 1
+        fi
         volume=$(ExpandVariables "$volume")
         echo "$volume"
     fi
