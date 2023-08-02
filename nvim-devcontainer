@@ -199,6 +199,8 @@ if [ -z "$CONTAINER_ID" ]; then
         "
     if [[ $? -ne 0 ]]; then
         print_error "Initializing the container failed."
+        docker stop "$CONTAINER_ID"
+        docker rm "$CONTAINER_ID"
         exit 1
     fi
 fi
