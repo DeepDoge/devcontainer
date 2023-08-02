@@ -175,8 +175,8 @@ if [ -z "$CONTAINER_ID" ]; then
             whoami &&
             echo '[INFO] id: ' &&
             id &&
-            echo '[INFO] ls -la /workspaces: ' &&
-            ls -la /workspaces
+            echo '[INFO] ls -la: ' &&
+            ls -la
             
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
             sudo chown 755 /workspaces
