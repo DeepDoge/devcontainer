@@ -160,6 +160,8 @@ if [ -z "$CONTAINER_ID" ]; then
         exit 1
     fi
 
+    print_info "Initializing container..."
+
     docker exec -u "$CONFIG_REMOTE_USER" \
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
@@ -190,6 +192,10 @@ if [ -z "$CONTAINER_ID" ]; then
                 $CONFIG_POST_CREATE_COMMAND
             fi
         "
+    if [[ $? -ne 0 ]]; then
+        print_error "Initializing the container failed."
+        exit 1
+    fi
 
     CONTAINER_ID=$(docker ps -aq -f "label=$CONTAINER_LABEL")
 fi
