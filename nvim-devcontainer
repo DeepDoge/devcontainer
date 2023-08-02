@@ -208,7 +208,7 @@ docker exec -u "$CONFIG_REMOTE_USER" \
             $CONFIG_POST_START_COMMAND
         fi
 
-        $CONTAINER_HOME_DIRECTORY/.local/bin/nvim
+        $CONTAINER_HOME_DIRECTORY/.local/bin/nvim || bash
     "
 if [[ $? -ne 0 ]]; then
     print_error "Attaching to the container failed."
