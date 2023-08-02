@@ -3,6 +3,7 @@
 green='\033[0;32m'
 red='\033[0;31m'
 comment='\033[0;33m'
+red2='\033[0;91m'
 nc='\033[0m'
 
 PrintInfo() {
@@ -18,7 +19,7 @@ PrintCommand() {
 
 PrintError() {
     local message=$1
-    echo -e "[${red}ERROR${nc}] $message"
+    echo -e "[${red}ERROR${nc}] ${red2}$message${nc}"
 }
 
 Panic() {
