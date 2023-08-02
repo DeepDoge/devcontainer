@@ -25,8 +25,16 @@ Panic() {
 }
 
 ExpandVariables() {
-    local replaced_string=$(eval "echo \"$1\"")  # Evaluate and expand variables
-    echo "$replaced_string"
+    # find all variables in the string and replace them with their values
+    local string="$1"
+    local expandedString="$string"
+    local variableRegex='\$\{([a-zA-Z0-9_]+)\}'
+    while [[ "$expandedString" =~ $variableRegex ]]; do
+        local variableName="${BASH_REMATCH[1]}"
+        local variableValue="${!variableName}"
+        expandedString="${expandedString//$BASH_REMATCH/$variableValue}"
+    done
+    echo "$expandedString"
 }
 
 GetProfileValue() {
