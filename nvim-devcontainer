@@ -151,8 +151,11 @@ if [ -z "$CONTAINER_ID" ]; then
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
-            while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
+            while true; do
                 sleep 5
+                if [ -z \"\$(ls /dev/pts/ptmx)\" ]; then
+                    break
+                fi
             done
         "
     if [[ $? -ne 0 ]]; then
