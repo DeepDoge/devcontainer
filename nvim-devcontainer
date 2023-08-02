@@ -9,7 +9,7 @@ CONFIG_PATH="${HOME_DIRECTORY}/.config/@deepdoge/nvim-devcontainer"
 NVIM_TAR_GZ_LINK="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
 
 # If arguments is given, use them as project path, otherwise use current directory.
-if [[ -z $@ ]]; then
+if [[ -n "$@" ]]; then
     PROJECT_PATH="$@"
 else
     PROJECT_PATH=$(realpath "$(pwd)")
