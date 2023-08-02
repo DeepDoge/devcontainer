@@ -152,11 +152,9 @@ if [ -z "$CONTAINER_ID" ]; then
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
-            while true; do
+            sleep 5
+            while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 5
-                if [ "$(ls /dev/pts | wc -l)" -le 1 ]; then
-                    break
-                fi
             done
         "
     if [[ $? -ne 0 ]]; then
@@ -170,14 +168,7 @@ if [ -z "$CONTAINER_ID" ]; then
 
     docker exec -u "$CONFIG_REMOTE_USER" \
         -it "$CONTAINER_ID" \
-        bash -c "
-            echo '[INFO] whoami: ' &&
-            whoami &&
-            echo '[INFO] id: ' &&
-            id &&
-            echo '[INFO] ls -la: ' &&
-            ls -la
-            
+        bash -c "            
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
             sudo chown 755 /workspaces
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
