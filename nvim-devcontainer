@@ -46,14 +46,14 @@ ExecuteProfileCommand() {
     local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
-        local commands=$(echo "$profile_commands" | jq -r 'join("\n")')
+        local commands=$(printf "$profile_commands" | jq -r 'join("\n")')
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse $key commands."
             return 1
         fi
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key..."
-        echo "$expanded_commands"
+        printf "$expanded_commands"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
