@@ -68,12 +68,13 @@ ProfileVolumesAsDockerArgs() {
     if [[ -n "$volumes" ]]; then
         local volume=""
         while IFS= read -r line; do
-            volume="$volume -v \"$(ExpandVariables "$line")\""
+            volume="$volume -v \"$line\""
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse volumes."
             return 1
         fi
+        volume=$(ExpandVariables "$volume")
         echo "$volume"
     fi
 }
