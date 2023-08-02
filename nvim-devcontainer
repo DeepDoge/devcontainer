@@ -47,12 +47,13 @@ ProfileVolumesAsDockerArgs() {
     local volumes=$(GetProfileValue "volumes")
     if [[ -n "$volumes" ]]; then
         local dockerArgs=""
-        for volume in $(jq -r ".volumes | .[]" <<< "$profile"); do
+        while IFS= read -r volume; do
             dockerArgs="$dockerArgs -v $volume"
-        done
+        done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
         echo "$dockerArgs"
     fi
 }
+
 
 FindProjectConfig() {
     local paths=(
@@ -220,7 +221,7 @@ if [ -z "$containerId" ]; then
     PrintInfo "Initializing container..."
 
     InitializationPanic() {
-        Panic "Initialization failed." "docker exec -u \"$config_RemoteUser\" -it \"$containerId\" bash"
+        Panic "Initialization failed." "docker rm -f $containerId"
     }
 
     docker exec -u "$config_RemoteUser" \
