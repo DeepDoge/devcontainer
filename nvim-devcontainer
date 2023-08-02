@@ -171,8 +171,8 @@ if [ -z "$CONTAINER_ID" ]; then
             cd $CONTAINER_HOME_DIRECTORY/.local/bin/ &&
             ln -sf $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim nvim
 
-            chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces/$PROJECT_NAME
-            chown 755 /workspaces/$PROJECT_NAME
+            chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
+            chown 755 /workspaces
             chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
             chown 755 $CONTAINER_HOME_DIRECTORY
 
