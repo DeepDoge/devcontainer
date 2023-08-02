@@ -170,10 +170,8 @@ if [ -z "$CONTAINER_ID" ]; then
     docker exec -u "$CONFIG_REMOTE_USER" \
         -it "$CONTAINER_ID" \
         sh -c "            
-            sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
-            sudo chown 755 /workspaces
-            sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
-            sudo chown 755 $CONTAINER_HOME_DIRECTORY
+            sudo chown -R \$USER:\$GROUP /workspaces
+            sudo chown -R \$USER:\$GROUP $CONTAINER_HOME_DIRECTORY
 
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
