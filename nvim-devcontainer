@@ -43,6 +43,7 @@ ExecuteProfileCommand() {
     if [ -n "$profile_commands" ]; then
         local commands=$(echo "$profile_commands" | jq -r 'join("\n")')
         local expanded_commands=$(ExpandVariables "$commands")
+        PrintInfo "Executing profile command $key..."
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
