@@ -150,6 +150,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
+            chsh -s /bin/bash $CONFIG_REMOTE_USER
             while true; do
                 sleep 5
                 if [ "$(ls /dev/pts | wc -l)" -le 1 ]; then
@@ -168,7 +169,6 @@ if [ -z "$CONTAINER_ID" ]; then
 
     docker exec -u "$CONFIG_REMOTE_USER" \
         -e DISPLAY=$DISPLAY \
-        -e SHELL=/bin/bash \
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash -c "
@@ -176,7 +176,6 @@ if [ -z "$CONTAINER_ID" ]; then
             sudo chown 755 /workspaces
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
             sudo chown 755 $CONTAINER_HOME_DIRECTORY
-            sudo chsh -s /bin/bash $CONFIG_REMOTE_USER
 
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
@@ -217,7 +216,6 @@ fi
 print_info "Attaching to the container \"$CONTAINER_ID\" project..."
 docker exec -u "$CONFIG_REMOTE_USER" \
     -e DISPLAY=$DISPLAY \
-    -e SHELL=/bin/bash \
     -w "/workspaces/$PROJECT_NAME" \
     -it "$CONTAINER_ID" \
     bash -c "
@@ -233,7 +231,6 @@ if [[ $? -ne 0 ]]; then
     print_info "Attaching the container with bash for debugging..."
     docker exec -u "$CONFIG_REMOTE_USER" \
         -e DISPLAY=$DISPLAY \
-        -e SHELL=/bin/bash \
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash
