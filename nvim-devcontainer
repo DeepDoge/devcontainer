@@ -75,7 +75,7 @@ ProfileVolumesAsDockerArgs() {
     if [[ -n "$volumes" ]]; then
         local volume=""
         while IFS= read -r line; do
-            volume="$volume -v \"$(ExpandVariables "$line" | sed 's/[^a-zA-Z0-9\/\:\.\-\_]//g')\""
+            volume="$volume -v \"$(echo $(ExpandVariables "$line") | sed 's/[^a-zA-Z0-9\/\:\.\-\_]//g')\""
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse volumes."
