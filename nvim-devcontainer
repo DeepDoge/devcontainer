@@ -53,6 +53,7 @@ ExecuteProfileCommand() {
         fi
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key..."
+        echo "$expanded_commands"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
@@ -68,7 +69,7 @@ ProfileVolumesAsDockerArgs() {
     if [[ -n "$volumes" ]]; then
         local volume=""
         while IFS= read -r line; do
-            volume="$volume -v \"$line\""
+            volume="$volume -v \"$line\"" # TODO: sanitize
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse volumes."
@@ -189,9 +190,9 @@ defaultProfile='{
         "    mv ./nvim-linux64/* $containerHomeDir/.local/share/nvim-linux64/",
         "fi",
         "",
-        "chmod +x \"$containerHomeDir/.local/share/nvim-linux64/bin/nvim\"",
+        "chmod +x \"$containerHomeDir/.local/share/nvim-linux64/bin/nvim\" &&",
         "",
-        "mkdir -p $containerHomeDir/.local/bin",
+        "mkdir -p $containerHomeDir/.local/bin &&",
         "cd $containerHomeDir/.local/bin/ &&",
         "ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim"
     ],
