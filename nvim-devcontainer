@@ -37,10 +37,8 @@ GetProfileValue() {
 }
 
 ExecuteProfileCommand() {
-    # profile commands are an array of strings, so we need to join them first with jq
-    # also profile commands might have $ variables so we need to expand them
     local key="$1"
-    local profile_commands=$(GetProfileValue "$key") # Assuming GetProfileValue retrieves the profile commands
+    local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
         local commands=$(echo "$profile_commands" | jq -r 'join("\n")')
@@ -61,7 +59,6 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    # volumes might have $ variables so we need to expand them first
     local volumes=$(GetProfileValue "volumes")
     if [[ -n "$volumes" ]]; then
         local volume=""
@@ -205,7 +202,7 @@ mkdir -p "$profilesDir"
 if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
     echo "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
 fi
-arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified."
+arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
 profile=$(cat "$profilePath") && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
 
