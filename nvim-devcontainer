@@ -197,9 +197,7 @@ if [ -z "$CONTAINER_ID" ]; then
 
     if [[ -n "$CONFIG_POST_CREATE_COMMAND" && "$CONFIG_POST_CREATE_COMMAND" != "null" ]]; then
         print_info "Executing postCreateCommand..."
-        docker exec -u "$CONFIG_REMOTE_USER" \
-            -it "$CONTAINER_ID" \
-            bash -c "$CONFIG_POST_CREATE_COMMAND"
+        docker exec -u "$CONFIG_REMOTE_USER" -it "$CONTAINER_ID" bash -c "$CONFIG_POST_CREATE_COMMAND"
         if [[ $? -ne 0 ]]; then
             print_error "Executing postCreateCommand failed."
             docker rm -f "$CONTAINER_ID"
@@ -217,16 +215,17 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; t
     fi
 fi
 print_info "Attaching to the container \"$CONTAINER_ID\" project..."
-docker exec -u "$CONFIG_REMOTE_USER" \
+print_info "Executing postStartCommand..."
+docker exec -u "$CONFIG_REMOTE_USER" -it "$CONTAINER_ID" bash -c "$CONFIG_POST_START_COMMAND"
+if [[ $? -ne 0 ]]; then
+    print_error "Executing postStartCommand failed."
+else
+    docker exec -u "$CONFIG_REMOTE_USER" \
     -it "$CONTAINER_ID" \
     bash -c "
-        if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
-            echo \"[INFO] Executing postStartCommand...\"
-            $CONFIG_POST_START_COMMAND
-        fi
-
         $CONTAINER_HOME_DIRECTORY/.local/bin/nvim
     "
+fi
 if [[ $? -ne 0 ]]; then
     print_error "Attaching to the container with nvim failed."
     print_info "Attaching the container with bash for debugging..."
