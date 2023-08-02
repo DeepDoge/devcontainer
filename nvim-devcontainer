@@ -28,6 +28,14 @@ PrintError() {
     echo -e "[${red}ERROR${nc}] $message"
 }
 
+Panic() {
+    local message=$1
+    local beforeExit=$2
+    PrintError "$message"
+    [[ -n "$beforeExit" ]] && $beforeExit
+    exit 1
+}
+
 # Function to find the devcontainer.json file
 FindDevcontainerJson() {
     local paths=(
@@ -68,20 +76,27 @@ GetConfigValue() {
     echo ""
 }
 
+ExecuteCommand() {
+    local key="$1"
+    local command=$(GetConfigValue "$key")
+
+    if [[ -n "$command" ]]; then
+        PrintInfo "Executing $key..."
+        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
+        if [[ $? -ne 0 ]]; then
+            PrintError "Executing $key failed."
+            return 1
+        fi
+    fi
+
+    return 0
+}
+
 # Main script
-devcontainerJsonPath=$(FindDevcontainerJson)
+devcontainerJsonPath=$(FindDevcontainerJson) && [[ ! -f "$devcontainerJsonPath" ]] && Panic "No devcontainer.json found."
 devcontainerJsonDir=$(dirname "$devcontainerJsonPath")
 
-if [[ ! -f "$devcontainerJsonPath" ]]; then
-    PrintError "No devcontainer.json found."
-    exit 1
-fi
-
-devcontainerJson=$(ReadDevcontainerJson "$devcontainerJsonPath")
-if [[ -z "$devcontainerJson" ]]; then
-    PrintError "No valid devcontainer.json found."
-    exit 1
-fi
+devcontainerJson=$(ReadDevcontainerJson "$devcontainerJsonPath") && [[ -z "$devcontainerJson" ]] && Panic "Failed to read devcontainer.json."
 
 containerId=$(docker ps -aq -f "label=nvim-devcontainer-$projectPath")
 containerLabel="nvim-devcontainer-$projectPath"
@@ -91,18 +106,11 @@ if [[ -n "$config_Dockerfile" ]]; then
     dockerfilePath="$devcontainerJsonDir/$config_Dockerfile"
     config_Image="nvim-devcontainer--$projectName--$(sha256sum "$dockerfilePath" | awk '{print $1}')"
 else
-    config_Image=$(GetConfigValue 'image')
-    if [[ -z "$config_Image" ]]; then
-        PrintError "No image specified in devcontainer.json."
-        exit 1
-    fi
+    config_Image=$(GetConfigValue 'image') && [[ -z "$config_Image" ]] && Panic "No image specified in devcontainer.json."
 fi
 
 PrintInfo "Using Docker image \"$config_Image\"..."
 imageDevcontainerMetadata=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$config_Image")
-
-config_PostCreateCommand=$(GetConfigValue 'postCreateCommand')
-config_PostStartCommand=$(GetConfigValue 'postStartCommand')
 config_RemoteUser=$(GetConfigValue 'remoteUser')
 if [[ -z "$config_RemoteUser" ]]; then
     config_RemoteUser="root"
@@ -114,20 +122,10 @@ fi
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
         PrintInfo "Building Docker image using $dockerfilePath..."
-        docker build -t "$config_Image" -f "$dockerfilePath" "$devcontainerJsonDir"
-
-        if [[ $? -ne 0 ]]; then
-            PrintError "Building Docker image failed."
-            exit 1
-        fi
+        docker build -t "$config_Image" -f "$dockerfilePath" "$devcontainerJsonDir" || Panic "Building Docker image failed."
     else
         PrintInfo "Pulling Docker image \"$config_Image\"..."
-        docker pull "$config_Image"
-
-        if [[ $? -ne 0 ]]; then
-            PrintError "Pulling Docker image failed."
-            exit 1
-        fi
+        docker pull "$config_Image" || Panic "Pulling Docker image failed."
     fi
 
     PrintInfo "Creating container for \"$projectPath\" project..."
@@ -155,16 +153,16 @@ if [ -z "$containerId" ]; then
             while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 5
             done
-        "
-    if [[ $? -ne 0 ]]; then
-        PrintError "Creating the container failed."
-        exit 1
-    fi
+        " || Panic "Creating container failed."
 
     containerId=$(docker ps -aq -f "label=$containerLabel")
     PrintInfo "Container created with ID \"$containerId\"."
 
     PrintInfo "Initializing container..."
+
+    InitializationPanic() {
+        Panic "Initialization failed." "docker rm -f \"$containerId\""
+    }
 
     docker exec -u "$config_RemoteUser" \
         -it "$containerId" \
@@ -185,58 +183,26 @@ if [ -z "$containerId" ]; then
             mkdir -p $containerHomeDirectory/.local/bin
             cd $containerHomeDirectory/.local/bin/ &&
             ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim nvim
-        "
-    if [[ $? -ne 0 ]]; then
-        PrintError "Initializing the container failed."
-        docker rm -f "$containerId"
-        exit 1
-    fi
+        " || InitializationPanic
 
-    if [[ -n "$config_PostCreateCommand" ]]; then
-        PrintInfo "Executing postCreateCommand..."
-        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$config_PostCreateCommand"
-        if [[ $? -ne 0 ]]; then
-            PrintError "Executing postCreateCommand failed."
-            docker rm -f "$containerId"
-            exit 1
-        fi
-    fi
+    ExecuteCommand "postCreateCommand" || InitializationPanic
 fi
 
-if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; then
-    PrintInfo "Starting container \"$containerId\"..."
-    docker start "$containerId"
-    if [[ $? -ne 0 ]]; then
-        PrintError "Starting the container failed."
-        exit 1
-    fi
-fi
+# Attach to the container
 
 PrintInfo "Attaching to the container \"$containerId\" project..."
 
 AttachingFailed() {
     PrintError "Attaching to the container failed."
     PrintInfo "Attaching the container with bash for debugging..."
-    docker exec -u "$config_RemoteUser" \
-        -it "$containerId" \
-        bash
+    docker exec -u "$config_RemoteUser" -it "$containerId" bash
     exit 1
 }
 
-if [[ -n "$config_PostCreateCommand" ]]; then
-    PrintInfo "Executing postStartCommand..."
-    docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$config_PostStartCommand"
-    if [[ $? -ne 0 ]]; then
-        PrintError "Executing postStartCommand failed."
-        AttachingFailed
-    fi
+if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; then
+    PrintInfo "Container is not running. Starting it..."
+    docker start "$containerId" || AttachingFailed
+    ExecuteCommand "postStartCommand" || AttachingFailed
 fi
 
-docker exec -u "$config_RemoteUser" \
-    -it "$containerId" \
-    bash -c "
-        $containerHomeDirectory/.local/bin/nvim
-    "
-if [[ $? -ne 0 ]]; then
-    AttachingFailed
-fi
+docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$containerHomeDirectory/.local/bin/nvim" || AttachingFailed
