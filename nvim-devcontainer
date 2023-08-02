@@ -18,6 +18,11 @@ Panic() {
     exit 1
 }
 
+ExpandVariables() {
+    local replaced_string=$(eval "echo \"$1\"")  # Evaluate and expand variables
+    echo "$replaced_string"
+}
+
 GetProfileValue() {
     local key="$1"
     local value=$(echo "$profile" | jq -r ".${key}")
@@ -30,28 +35,34 @@ GetProfileValue() {
 }
 
 ExecuteProfileCommand() {
-    local key="$1"
-    local command=$(jq -r ".${key} | @sh" <<< "$profile")
-    local command=$(eval "$command")
-    
-    if [[ -n "$command" ]]; then
-        PrintInfo "Executing $key..."
+    # profile commands are array of strings so we need to join them first
+    # also profile commands might have $ variables so we need to expand them
+    local commands=$(GetProfileValue "commands")
+    if [[ -n "$commands" ]]; then
+        local command=""
+        while IFS= read -r line; do
+            command="$command $line"
+        done <<< "$(jq -r ".commands | .[]" <<< "$profile")"
+        command=$(ExpandVariables "$command")
+        PrintInfo "Executing profile commands..."
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
         if [[ $? -ne 0 ]]; then
-            PrintError "Executing $key failed."
+            PrintError "Executing profile commands failed."
             return 1
         fi
     fi
 }
 
 ProfileVolumesAsDockerArgs() {
+    # volumes might have $ variables so we need to expand them first
     local volumes=$(GetProfileValue "volumes")
     if [[ -n "$volumes" ]]; then
-        local dockerArgs=""
-        while IFS= read -r volume; do
-            dockerArgs="$dockerArgs -v $volume"
+        local volume=""
+        while IFS= read -r line; do
+            volume="$volume -v $line"
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
-        echo $(eval "$dockerArgs")
+        volume=$(ExpandVariables "$volume")
+        echo "$volume"
     fi
 }
 
