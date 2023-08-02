@@ -71,7 +71,7 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    ExpandVariables $(echo -e "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
+    echo -e $(echo -e "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
 }
 
 
@@ -216,7 +216,7 @@ if [ -z "$containerId" ]; then
 
     PrintInfo "Creating container for \"$projectPath\" project..."
 
-    echo "$(ProfileVolumesAsDockerArgs)"
+    PrintCommand "$(ProfileVolumesAsDockerArgs)
 
     docker run --net=host -w "/workspaces/$projectName" \
         -v "$projectPath:/workspaces/$projectName" \
