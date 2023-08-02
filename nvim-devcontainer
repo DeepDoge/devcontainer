@@ -6,7 +6,8 @@ NC='\033[0m'
 
 HOME_DIRECTORY="${HOME}"
 CONFIG_PATH="${HOME_DIRECTORY}/.config/nvim-devcontainer-dd"
-NVIM_TAR_GZ_LINK="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+NVIM_DOWNLOAD="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+LAZY_GIT_DOWNLOAD="https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz"
 
 # If arguments is given, use them as project path, otherwise use current directory.
 if [[ -n "$@" ]]; then
@@ -152,7 +153,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
-                curl -LO \"$NVIM_TAR_GZ_LINK\" &&
+                curl -LO \"$NVIM_DOWNLOAD\" &&
                 tar xzf nvim-linux64.tar.gz &&
                 mkdir -p $CONTAINER_HOME_DIRECTORY/.local/share &&
                 mv ./nvim-linux64/* $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/
@@ -163,11 +164,6 @@ if [ -z "$CONTAINER_ID" ]; then
             mkdir -p $CONTAINER_HOME_DIRECTORY/.local/bin
             cd $CONTAINER_HOME_DIRECTORY/.local/bin/ &&
             ln -sf $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim nvim
-
-            chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
-            chown 755 /workspaces
-            chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
-            chown 755 $CONTAINER_HOME_DIRECTORY
 
             cd \"/workspaces/$PROJECT_NAME\" &&
 
@@ -203,6 +199,11 @@ docker exec -u "$CONFIG_REMOTE_USER" \
     -w "/workspaces/$PROJECT_NAME" \
     -it "$CONTAINER_ID" \
     bash -c "
+        sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
+        sudo chown 755 /workspaces
+        sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
+        sudo chown 755 $CONTAINER_HOME_DIRECTORY
+
         if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
             echo \"[INFO] Executing postStartCommand...\"
             $CONFIG_POST_START_COMMAND
