@@ -272,5 +272,6 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; th
     ExecuteConfigCommand "postStartCommand" || AttachingFailed
 fi
 
+ExecuteProfileCommand "installCommand" || InitializationPanic
 ExecuteConfigCommand "postAttachCommand" || AttachingFailed
 ExecuteProfileCommand "attachCommand" || AttachingFailed
