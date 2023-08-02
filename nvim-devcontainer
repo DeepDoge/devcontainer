@@ -2,7 +2,7 @@
 
 green='\033[0;32m'
 red='\033[0;31m'
-gray='\033[0;37m'
+comment='\033[0;33m'
 nc='\033[0m'
 
 PrintInfo() {
@@ -14,7 +14,7 @@ PrintCommand() {
     local message=$1
     local indentedMessage=$(echo -e "$message" | sed 's/^/    /')
     echo "" # newline
-    echo -e "${gray}$indentedMessage${nc}"
+    echo -e "${comment}$indentedMessage${nc}"
     echo "" # newline
 }
 
