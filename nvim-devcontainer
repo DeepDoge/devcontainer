@@ -234,12 +234,9 @@ if [ -z "$containerId" ]; then
         " || Panic "Creating container failed."
 
     containerId=$(docker ps -aq -f "label=$containerLabel")
-    PrintInfo "Container created with ID \"$containerId\"."
 
-    PrintInfo "Initializing container..."
-
-    InitializationPanic() {
-        Panic "Initialization failed." "docker rm -f $containerId"
+    CreationPanic() {
+        Panic "Creating container failed." "docker rm -f $containerId"
     }
 
     docker exec -u "$config_RemoteUser" \
@@ -247,10 +244,12 @@ if [ -z "$containerId" ]; then
         bash -c "            
             sudo chown -R $config_RemoteUser /workspaces
             sudo chown -R $config_RemoteUser $containerHomeDir
-        " || InitializationPanic
+        " || CreationPanic
 
-    ExecuteProfileCommand "installCommand" || InitializationPanic
-    ExecuteConfigCommand "postCreateCommand" || InitializationPanic
+    ExecuteProfileCommand "installCommand" || CreationPanic
+    ExecuteConfigCommand "postCreateCommand" || CreationPanic
+
+    PrintInfo "Container created with ID \"$containerId\"."
 fi
 
 # Attach to the container
@@ -272,6 +271,6 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; th
     ExecuteConfigCommand "postStartCommand" || AttachingFailed
 fi
 
-ExecuteProfileCommand "installCommand" || InitializationPanic
+ExecuteProfileCommand "installCommand" || CreationPanic
 ExecuteConfigCommand "postAttachCommand" || AttachingFailed
 ExecuteProfileCommand "attachCommand" || AttachingFailed
