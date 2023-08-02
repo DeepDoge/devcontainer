@@ -60,7 +60,7 @@ ProfileVolumesAsDockerArgs() {
     if [[ -n "$volumes" ]]; then
         local volume=""
         while IFS= read -r line; do
-            volume="$volume -v $line"
+            volume="$volume -v \"$line\""
         done <<< "$(jq -r ".volumes | .[]" <<< "$profile")"
         volume=$(ExpandVariables "$volume")
         echo "$volume"
