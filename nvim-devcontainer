@@ -232,9 +232,5 @@ if [[ $? -ne 0 ]]; then
         -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash
-    if [[ $? -ne 0 ]]; then
-        print_error "Starting the container with bash failed."
-        exit 1
-    fi
     exit 1
 fi
