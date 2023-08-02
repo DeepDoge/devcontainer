@@ -111,7 +111,7 @@ if [[ -n "$CONFIG_DOCKERFILE" ]]; then
         fi
     fi
 else
-    CONFIG_IMAGE=$(get_config_value "$DEVCONTAINER_JSON" "$IMAGE_DEVCONTAINER_METADATA" 'image')
+    CONFIG_IMAGE=$(get_config_value 'image')
     if [[ -z "$CONFIG_IMAGE" ]]; then
         print_error "No image specified in devcontainer.json."
         exit 1
