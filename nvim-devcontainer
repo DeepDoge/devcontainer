@@ -231,12 +231,12 @@ if [ -z "$containerId" ]; then
         -e SHELL=/bin/bash \
         -d --label "$containerLabel" "$config_Image" bash -c '
             sleep 5
-            export exitNextTime=0
+            exitNextTime=0
             while true; do
             sleep 5
             if [ "$exitNextTime" -eq 1 ]; then
                 if [ "$(ls /dev/pts | wc -l)" -gt 1 ]; then
-                    break
+                    exit 0
                 else
                     export exitNextTime=0
                 fi
