@@ -45,7 +45,7 @@ ExecuteProfileCommand() {
             command="$command $line"
         done <<< "$(jq -r ".commands | .[]" <<< "$profile")"
         command=$(ExpandVariables "$command")
-        PrintInfo "Executing $key"
+        PrintInfo "Executing profile command $key"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing profile commands failed."
@@ -105,7 +105,7 @@ ExecuteConfigCommand() {
     local command=$(GetConfigValue "$key")
 
     if [[ -n "$command" ]]; then
-        PrintInfo "Executing $key..."
+        PrintInfo "Executing config command $key..."
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
