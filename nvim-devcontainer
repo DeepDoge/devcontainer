@@ -25,7 +25,7 @@ Panic() {
 ExpandVariables() {
     # using envsubst
     local value="$1"
-    printf $(source <(printf "printf \"$value\""))
+    echo $"$(source <(echo $"echo \$\"$value\""))"
 }
 
 GetProfileValue() {
@@ -51,7 +51,7 @@ ExecuteProfileCommand() {
         fi
         local expanded_commands=$(ExpandVariables "$commands")
         echo "Executing profile command $key..."
-        printf "$expanded_commands"
+        echo $"$expanded_commands"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
