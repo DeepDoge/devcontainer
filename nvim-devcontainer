@@ -35,24 +35,23 @@ GetProfileValue() {
 }
 
 ExecuteProfileCommand() {
-    # profile commands are array of strings so we need to join them first
+    # profile commands are an array of strings, so we need to join them first with jq
     # also profile commands might have $ variables so we need to expand them
     local key="$1"
-    local commands=$(GetProfileValue $key)
-    if [[ -n "$commands" ]]; then
-        local command=""
-        while IFS= read -r line; do
-            command="$command $line"
-        done <<< "$(jq -r ".commands | .[]" <<< "$profile")"
-        command=$(ExpandVariables "$command")
-        PrintInfo "Executing profile command $key..."
-        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
+    local profile_commands=$(GetProfileValue "$key") # Assuming GetProfileValue retrieves the profile commands
+
+    if [ -n "$profile_commands" ]; then
+        local commands=$(echo "$profile_commands" | jq -r 'join("\n")')
+        local expanded_commands=$(ExpandVariables "$commands")
+        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
-            PrintError "Executing profile commands failed."
+            PrintError "Executing $key failed."
             return 1
         fi
     fi
+    return 0
 }
+
 
 ProfileVolumesAsDockerArgs() {
     # volumes might have $ variables so we need to expand them first
