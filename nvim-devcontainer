@@ -149,6 +149,8 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
+        -e DISPLAY=$DISPLAY \
+        -e SHELL=/bin/bash \
         -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             chsh -s /bin/bash $CONFIG_REMOTE_USER
             while true; do
@@ -168,9 +170,6 @@ if [ -z "$CONTAINER_ID" ]; then
     print_info "Initializing container..."
 
     docker exec -u "$CONFIG_REMOTE_USER" \
-        -e DISPLAY=$DISPLAY \
-        -e SHELL=/bin/bash \
-        -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash -c "
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
@@ -216,9 +215,6 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; t
 fi
 print_info "Attaching to the container \"$CONTAINER_ID\" project..."
 docker exec -u "$CONFIG_REMOTE_USER" \
-    -e DISPLAY=$DISPLAY \
-    -e SHELL=/bin/bash \
-    -w "/workspaces/$PROJECT_NAME" \
     -it "$CONTAINER_ID" \
     bash -c "
         if [[ -n \"$CONFIG_POST_START_COMMAND\" && \"$CONFIG_POST_START_COMMAND\" != \"null\" ]]; then
@@ -232,9 +228,6 @@ if [[ $? -ne 0 ]]; then
     print_error "Attaching to the container with nvim failed."
     print_info "Attaching the container with bash for debugging..."
     docker exec -u "$CONFIG_REMOTE_USER" \
-        -e DISPLAY=$DISPLAY \
-        -e SHELL=/bin/bash \
-        -w "/workspaces/$PROJECT_NAME" \
         -it "$CONTAINER_ID" \
         bash
     exit 1
