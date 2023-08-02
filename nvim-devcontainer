@@ -31,11 +31,11 @@ GetProfileValue() {
 
 ExecuteProfileCommand() {
     local key="$1"
-    local commands=$(jq -r ".${key} | @sh" <<< "$profile")
+    local command=$(jq -r ".${key} | @sh" <<< "$profile")
     
-    if [[ -n "$commands" ]]; then
+    if [[ -n "$command" ]]; then
         PrintInfo "Executing $key..."
-        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$commands"
+        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
         if [[ $? -ne 0 ]]; then
             PrintError "Executing $key failed."
             return 1
