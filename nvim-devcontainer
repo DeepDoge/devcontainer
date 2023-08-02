@@ -160,6 +160,8 @@ if [ -z "$CONTAINER_ID" ]; then
         exit 1
     fi
 
+    CONTAINER_ID=$(docker ps -aq -f "label=$CONTAINER_LABEL")
+
     print_info "Initializing container..."
 
     docker exec -u "$CONFIG_REMOTE_USER" \
@@ -196,8 +198,6 @@ if [ -z "$CONTAINER_ID" ]; then
         print_error "Initializing the container failed."
         exit 1
     fi
-
-    CONTAINER_ID=$(docker ps -aq -f "label=$CONTAINER_LABEL")
 fi
 
 if [ "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_ID")" == "false" ]; then
