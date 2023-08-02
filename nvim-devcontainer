@@ -162,19 +162,19 @@ defaultProfile='{
     ],
     "env": {},
     "installCommand": [
-        "if [ ! -f $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim ]; then",
+        "if [ ! -f ~/.local/share/nvim-linux64/bin/nvim ]; then",
         "    cd /tmp &&",
-        "    curl -LO \"$nvimDownload\" &&",
+        "    curl -LO \"https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz\" &&",
         "    tar xzf nvim-linux64.tar.gz &&",
-        "    mkdir -p $containerHomeDirectory/.local/share &&",
-        "    mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/",
+        "    mkdir -p ~/.local/share &&",
+        "    mv ./nvim-linux64/* ~/.local/share/nvim-linux64/",
         "fi",
         "",
-        "chmod +x \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\"",
+        "chmod +x \"~/.local/share/nvim-linux64/bin/nvim\"",
         "",
-        "mkdir -p $containerHomeDirectory/.local/bin",
-        "cd $containerHomeDirectory/.local/bin/ &&",
-        "ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim nvim"
+        "mkdir -p ~/.local/bin",
+        "cd ~/.local/bin/ &&",
+        "ln -sf ~/.local/share/nvim-linux64/bin/nvim nvim"
     ],
     "attachCommand": ["nvim"]
 }';
