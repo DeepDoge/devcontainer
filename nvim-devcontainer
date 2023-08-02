@@ -182,7 +182,10 @@ if [ -z "$CONTAINER_ID" ]; then
                 $CONFIG_POST_CREATE_COMMAND
             fi
 
-            sleep 5
+            # As long a more than one terminal is open, keep the container running
+            while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
+                sleep 5
+            done
         "
     if [[ $? -ne 0 ]]; then
         print_error "Creating the container failed."
