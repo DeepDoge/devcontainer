@@ -226,9 +226,9 @@ if [ -z "$containerId" ]; then
         Panic "Initialization failed." "docker rm -f $containerId"
     }
 
-    docker exec -u root "$containerId" bash -c "
-            chown -R $config_RemoteUser /workspaces &&
-            chown -R $config_RemoteUser $containerHomeDirectory
+    docker exec -u $config_RemoteUser -it "$containerId" bash -c "
+            sudo chown -R $config_RemoteUser /workspaces &&
+            sudo chown -R $config_RemoteUser $containerHomeDirectory
         " || InitializationPanic
 
     ExecuteProfileCommand "installCommand" || InitializationPanic
