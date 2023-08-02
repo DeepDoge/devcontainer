@@ -151,7 +151,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -u root \
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
-        -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
+        -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" sh -c "
             sleep 5
             while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 5
@@ -169,7 +169,7 @@ if [ -z "$CONTAINER_ID" ]; then
 
     docker exec -u "$CONFIG_REMOTE_USER" \
         -it "$CONTAINER_ID" \
-        bash -c "            
+        sh -c "            
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER /workspaces
             sudo chown 755 /workspaces
             sudo chown -R $CONFIG_REMOTE_USER:$CONFIG_REMOTE_USER $CONTAINER_HOME_DIRECTORY
@@ -188,18 +188,23 @@ if [ -z "$CONTAINER_ID" ]; then
             mkdir -p $CONTAINER_HOME_DIRECTORY/.local/bin
             cd $CONTAINER_HOME_DIRECTORY/.local/bin/ &&
             ln -sf $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim nvim
-
-            cd \"/workspaces/$PROJECT_NAME\" &&
-
-            if [[ -n \"$CONFIG_POST_CREATE_COMMAND\" && \"$CONFIG_POST_CREATE_COMMAND\" != \"null\" ]]; then
-                echo \"[INFO] Executing postCreateCommand...\" ;
-                $CONFIG_POST_CREATE_COMMAND
-            fi
         "
     if [[ $? -ne 0 ]]; then
         print_error "Initializing the container failed."
         docker rm -f "$CONTAINER_ID"
         exit 1
+    fi
+
+    if [[ -n "$CONFIG_POST_CREATE_COMMAND" && "$CONFIG_POST_CREATE_COMMAND" != "null" ]]; then
+        print_info "Executing postCreateCommand..."
+        docker exec -u "$CONFIG_REMOTE_USER" \
+            -it "$CONTAINER_ID" \
+            bash -c "$CONFIG_POST_CREATE_COMMAND"
+        if [[ $? -ne 0 ]]; then
+            print_error "Executing postCreateCommand failed."
+            docker rm -f "$CONTAINER_ID"
+            exit 1
+        fi
     fi
 fi
 
