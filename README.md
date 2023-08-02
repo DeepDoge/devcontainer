@@ -1,4 +1,4 @@
-This is in very early in development, and is not ready for use yet.
+This is very early in development, and is not ready for use yet.
 
 Anything can change, directory paths, file names, repo name, behavior, etc.
 
