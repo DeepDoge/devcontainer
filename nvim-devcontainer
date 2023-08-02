@@ -164,6 +164,8 @@ if [ -z "$CONTAINER_ID" ]; then
 
     CONTAINER_ID=$(docker ps -aq -f "label=$CONTAINER_LABEL")
 
+    sleep 10
+
     print_info "Initializing container..."
 
     docker exec -u "$CONFIG_REMOTE_USER" \
