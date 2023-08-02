@@ -150,7 +150,7 @@ if [ -z "$CONTAINER_ID" ]; then
         -v "$HOME_DIRECTORY/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
-        -d --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
+        --label "$CONTAINER_LABEL" "$CONFIG_IMAGE" bash -c "
             if [ ! -f $CONTAINER_HOME_DIRECTORY/.local/share/nvim-linux64/bin/nvim ]; then
                 cd /tmp &&
                 curl -LO \"$NVIM_DOWNLOAD\" &&
@@ -172,10 +172,8 @@ if [ -z "$CONTAINER_ID" ]; then
                 $CONFIG_POST_CREATE_COMMAND
             fi
 
-            # As long a more than one terminal is open, keep the container running
-            while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
-                sleep 5
-            done
+            # Disown and as long a more than one terminal is open, keep the container running
+            disown -h && while [ \$(tty | wc -l) -gt 0 ]; do sleep 5; done
         "
     if [[ $? -ne 0 ]]; then
         print_error "Creating the container failed."
