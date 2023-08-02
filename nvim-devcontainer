@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e # Exit on error
+
 PrintInfo() {
     local message=$1
     echo -e "[${green}INFO${nc}] $message"
