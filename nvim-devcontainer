@@ -153,31 +153,32 @@ fi
 
 defaultProfileName="nvim"
 defaultProfile='{
-        "volumes": [
-            "$configDir/nvim/config:$containerHomeDirectory/.config/nvim",
-            "$configDir/nvim/cache:$containerHomeDirectory/.cache/nvim",
-            "$configDir/nvim/local/state:$containerHomeDirectory/.local/state",
-            "$configDir/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim",
-            "$configDir/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64"
-        ],
-        "env": {},
-        "installCommand": [
-            "if [ ! -f \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\" ]; then",
-            "    echo \"Downloading Neovim...\"",
-            "    cd /tmp &&",
-            "    curl -LO \"$nvimDownload\"",
-            "    tar xzf nvim-linux64.tar.gz &&",
-            "    mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/ &&",
-            "    rm -rf /tmp/nvim-linux64.tar.gz /tmp/nvim-linux64",
-            "fi",
+    "volumes": [
+        "$configDir/nvim/config:$containerHomeDirectory/.config/nvim",
+        "$configDir/nvim/cache:$containerHomeDirectory/.cache/nvim",
+        "$configDir/nvim/local/state:$containerHomeDirectory/.local/state",
+        "$configDir/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim",
+        "$configDir/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64"
+    ],
+    "env": {},
+    "installCommand": [
+        "if [ ! -f $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim ]; then",
+        "    cd /tmp &&",
+        "    curl -LO \"$nvimDownload\" &&",
+        "    tar xzf nvim-linux64.tar.gz &&",
+        "    mkdir -p $containerHomeDirectory/.local/share &&",
+        "    mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/",
+        "fi",
+        "",
+        "chmod +x \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\"",
+        "",
+        "mkdir -p $containerHomeDirectory/.local/bin",
+        "cd $containerHomeDirectory/.local/bin/ &&",
+        "ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim nvim"
+    ],
+    "attachCommand": ["nvim"]
+}';
 
-            "chmod +x $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim &&",
-
-            "mkdir -p $containerHomeDirectory/.local/bin &&",
-            "ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim $containerHomeDirectory/.local/bin/nvim &&"
-        ],
-        "attachCommand": ["nvim"]
-    }'
 
 mkdir -p "$profilesDir"
 if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
