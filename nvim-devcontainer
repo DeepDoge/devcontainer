@@ -1,23 +1,5 @@
 #!/bin/bash
 
-green='\033[0;32m'
-red='\033[0;31m'
-nc='\033[0m'
-
-homeDirectory="${HOME}"
-configPath="${homeDirectory}/.config/nvim-devcontainer-dd"
-nvimDownload="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
-lazyGitDownload="https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz"
-
-# If arguments are given, use them as the project path; otherwise, use the current directory.
-if [[ -n "$@" ]]; then
-    projectPath=$(realpath "$@")
-else
-    projectPath=$(realpath "$(pwd)")
-fi
-projectName=$(basename "$projectPath")
-
-# Function to print colored messages
 PrintInfo() {
     local message=$1
     echo -e "[${green}INFO${nc}] $message"
@@ -36,7 +18,43 @@ Panic() {
     exit 1
 }
 
-FindDevcontainerJson() {
+GetProfileValue() {
+    local key="$1"
+    local value=$(echo "$profile" | jq -r ".${key}")
+    if [[ "$value" != "null" ]]; then
+        echo "$value"
+        return
+    fi
+
+    echo ""
+}
+
+ExecuteProfileCommand() {
+    local key="$1"
+    local commands=$(jq -r ".${key} | @sh" <<< "$profile")
+    
+    if [[ -n "$commands" ]]; then
+        PrintInfo "Executing $key..."
+        docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$commands"
+        if [[ $? -ne 0 ]]; then
+            PrintError "Executing $key failed."
+            return 1
+        fi
+    fi
+}
+
+ProfileVolumesAsDockerArgs() {
+    local volumes=$(GetProfileValue "volumes")
+    if [[ -n "$volumes" ]]; then
+        local dockerArgs=""
+        for volume in $(jq -r ".volumes | .[]" <<< "$profile"); do
+            dockerArgs="$dockerArgs -v $volume"
+        done
+        echo "$dockerArgs"
+    fi
+}
+
+FindProjectConfig() {
     local paths=(
         "$projectPath/devcontainer.json"
         "$projectPath/.devcontainer/devcontainer.json"
@@ -50,21 +68,16 @@ FindDevcontainerJson() {
     done
 }
 
-ReadDevcontainerJson() {
-    local devcontainerJsonPath="$1"
-    sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$devcontainerJsonPath"
-}
-
 GetConfigValue() {
     local key="$1"
 
-    local value=$(echo "$devcontainerJson" | jq -r ".${key}")
+    local value=$(echo "$projectConfig" | jq -r ".${key}")
     if [[ "$value" != "null" ]]; then
         echo "$value"
         return
     fi
 
-    local metadataValue=$(echo "$imageDevcontainerMetadata" | jq -r ". | reverse | .[] | select(.${key} != null) | .${key}" | head -n 1)
+    local metadataValue=$(echo "$imageConfig" | jq -r ". | reverse | .[] | select(.${key} != null) | .${key}" | head -n 1)
     if [[ "$metadataValue" != "" && "$metadataValue" != "null" ]]; then
         echo "$metadataValue"
         return
@@ -73,7 +86,7 @@ GetConfigValue() {
     echo ""
 }
 
-ExecuteCommand() {
+ExecuteConfigCommand() {
     local key="$1"
     local command=$(GetConfigValue "$key")
 
@@ -89,30 +102,89 @@ ExecuteCommand() {
     return 0
 }
 
-AttachWithBash() {
-    PrintInfo "Attaching the container with bash..."
-    docker exec -u "$config_RemoteUser" -it "$containerId" bash
+green='\033[0;32m'
+red='\033[0;31m'
+nc='\033[0m'
+
+nvimDownload="https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz"
+lazyGitDownload="https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz"
+
+homeDirectory="$HOME"
+configDir="$homeDirectory/.config/nvim-devcontainer-dd"
+profilesDir="$configDir/profiles"
+
+mkdir -p "$profilesDir"
+
+defaultProfileName="nvim"
+defaultProfile() {
+    echo '{
+        "volumes": [
+            "$configDir/nvim/config:$containerHomeDirectory/.config/nvim",
+            "$configDir/nvim/cache:$containerHomeDirectory/.cache/nvim",
+            "$configDir/nvim/local/state:$containerHomeDirectory/.local/state",
+            "$configDir/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim",
+            "$configDir/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64"
+        ],
+        "env": {},
+        "installCommand": [
+            "chown -R $config_RemoteUser \"workspaces\"",
+            "chown -R $config_RemoteUser $containerHomeDirectory",
+
+            "if [ ! -f \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\" ]; then",
+            "    echo \"Downloading Neovim...\"",
+            "    cd /tmp &&",
+            "    curl -LO \"$nvimDownload\"",
+            "    tar xzf nvim-linux64.tar.gz &&",
+            "    mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/ &&",
+            "    rm -rf /tmp/nvim-linux64.tar.gz /tmp/nvim-linux64",
+            "fi",
+
+            "chmod +x $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim &&",
+
+            "mkdir -p $containerHomeDirectory/.local/bin &&",
+            "ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim $containerHomeDirectory/.local/bin/nvim &&"
+        ],
+        "attachCommand": ["nvim"]
+    }'
 }
 
-# Main script
-devcontainerJsonPath=$(FindDevcontainerJson) && [[ ! -f "$devcontainerJsonPath" ]] && Panic "No devcontainer.json found."
-devcontainerJsonDir=$(dirname "$devcontainerJsonPath")
+# if there are no profiles, create a default one
+if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
+    echo "$(defaultProfile)" >"$profilesDir/$defaultProfileName.json"
+fi
 
-devcontainerJson=$(ReadDevcontainerJson "$devcontainerJsonPath") && [[ -z "$devcontainerJson" ]] && Panic "Failed to read devcontainer.json."
+arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified."
+profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
+profile=$(cat "$profilePath") && [[ -z "$profileJson" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
+
+arg_ProjectPath=""
+for ((i = 2; i <= $#; i++)); do
+    arg_ProjectPath="$arg_ProjectPath ${!i}"
+done
+if [[ -n "$arg_ProjectPath" ]]; then
+    projectPath=$(realpath "$arg_ProjectPath")
+else
+    projectPath=$(realpath "$(pwd)")
+fi
+projectName=$(basename "$projectPath")
+
+projectConfigPath=$(FindProjectConfig) && [[ ! -f "$projectConfigPath" ]] && Panic "No devcontainer.json found."
+projectConfigDir=$(dirname "$projectConfigPath")
+projectConfig=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$projectConfigPath") && [[ -z "$projectConfig" ]] && Panic "Failed to read devcontainer.json."
 
 containerId=$(docker ps -aq -f "label=nvim-devcontainer-$projectPath")
 containerLabel="nvim-devcontainer-$projectPath"
 config_Dockerfile=$(GetConfigValue 'build.dockerfile')
 
 if [[ -n "$config_Dockerfile" ]]; then
-    dockerfilePath="$devcontainerJsonDir/$config_Dockerfile"
+    dockerfilePath="$projectConfigDir/$config_Dockerfile"
     config_Image="nvim-devcontainer--$projectName--$(sha256sum "$dockerfilePath" | awk '{print $1}')"
 else
     config_Image=$(GetConfigValue 'image') && [[ -z "$config_Image" ]] && Panic "No image specified in devcontainer.json."
 fi
 
 PrintInfo "Using Docker image \"$config_Image\"..."
-imageDevcontainerMetadata=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$config_Image")
+imageConfig=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$config_Image")
 config_RemoteUser=$(GetConfigValue 'remoteUser')
 if [[ -z "$config_RemoteUser" ]]; then
     config_RemoteUser="root"
@@ -124,7 +196,7 @@ fi
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
         PrintInfo "Building Docker image using $dockerfilePath..."
-        docker build -t "$config_Image" -f "$dockerfilePath" "$devcontainerJsonDir" || Panic "Building Docker image failed."
+        docker build -t "$config_Image" -f "$dockerfilePath" "$projectConfigDir" || Panic "Building Docker image failed."
     else
         PrintInfo "Pulling Docker image \"$config_Image\"..."
         docker pull "$config_Image" || Panic "Pulling Docker image failed."
@@ -132,25 +204,15 @@ if [ -z "$containerId" ]; then
 
     PrintInfo "Creating container for \"$projectPath\" project..."
 
-    mkdir -p "$configPath/nvim/config"
-    mkdir -p "$configPath/nvim/cache"
-    mkdir -p "$configPath/nvim/local/state"
-    mkdir -p "$configPath/nvim/local/share/nvim"
-    mkdir -p "$configPath/nvim/local/share/nvim-linux64"
-
     docker run --net=host -w "/workspaces/$projectName" \
         -v "$projectPath:/workspaces/$projectName" \
-        -v "$configPath/nvim/config:$containerHomeDirectory/.config/nvim" \
-        -v "$configPath/nvim/cache:$containerHomeDirectory/.cache/nvim" \
-        -v "$configPath/nvim/local/state:$containerHomeDirectory/.local/state/nvim" \
-        -v "$configPath/nvim/local/share/nvim:$containerHomeDirectory/.local/share/nvim" \
-        -v "$configPath/nvim/local/share/nvim-linux64:$containerHomeDirectory/.local/share/nvim-linux64" \
+        $(ProfileVolumesAsDockerRunArguments) \
         -v "$homeDirectory/.gitconfig:/etc/gitconfig" \
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -u root \
         -e DISPLAY=$DISPLAY \
         -e SHELL=/bin/bash \
-        -d --label "$containerLabel" "$config_Image" sh -c "
+        -d --label "$containerLabel" "$config_Image" bash -c "
             sleep 5
             while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 5
@@ -166,33 +228,18 @@ if [ -z "$containerId" ]; then
         Panic "Initialization failed." "docker rm -f \"$containerId\""
     }
 
-    docker exec -u "$config_RemoteUser" \
-        -it "$containerId" \
-        sh -c "            
-            sudo chown -R $config_RemoteUser /workspaces
-            sudo chown -R $config_RemoteUser $containerHomeDirectory
-
-            if [ ! -f $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim ]; then
-                cd /tmp &&
-                curl -LO \"$nvimDownload\" &&
-                tar xzf nvim-linux64.tar.gz &&
-                mkdir -p $containerHomeDirectory/.local/share &&
-                mv ./nvim-linux64/* $containerHomeDirectory/.local/share/nvim-linux64/
-            fi
-
-            chmod +x \"$containerHomeDirectory/.local/share/nvim-linux64/bin/nvim\"
-            
-            mkdir -p $containerHomeDirectory/.local/bin
-            cd $containerHomeDirectory/.local/bin/ &&
-            ln -sf $containerHomeDirectory/.local/share/nvim-linux64/bin/nvim nvim
-        " || InitializationPanic
-
-    ExecuteCommand "postCreateCommand" || InitializationPanic
+    ExecuteProfileCommand "installCommand" || InitializationPanic
+    ExecuteConfigCommand "postCreateCommand" || InitializationPanic
 fi
 
 # Attach to the container
 
 PrintInfo "Attaching to the container \"$containerId\" project..."
+
+AttachWithBash() {
+    PrintInfo "Attaching the container with bash..."
+    docker exec -u "$config_RemoteUser" -it "$containerId" bash
+}
 
 AttachingFailed() {
     Panic "Attaching to the container failed." "AttachWithBash"
@@ -201,8 +248,8 @@ AttachingFailed() {
 if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; then
     PrintInfo "Container is not running. Starting it..."
     docker start "$containerId" || AttachingFailed
-    ExecuteCommand "postStartCommand" || AttachingFailed
+    ExecuteConfigCommand "postStartCommand" || AttachingFailed
 fi
 
-ExecuteCommand "postAttachCommand" || AttachingFailed
-docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$containerHomeDirectory/.local/bin/nvim" || AttachingFailed
+ExecuteConfigCommand "postAttachCommand" || AttachingFailed
+ExecuteProfileCommand "attachCommand" || AttachingFailed
