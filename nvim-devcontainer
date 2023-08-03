@@ -37,11 +37,7 @@ ExpandVariables() {
 
 GetProfileValue() { 
     local key="$1"
-    local value=$(echo -e "$profile" | jq -er ".${key}")
-    if [[ $? -ne 0 || "$value" == "null" ]]; then
-        echo -e ""
-        exit 1
-    fi
+    local value=$(echo -e "$profile" | jq -er ".${key}" || Error "Failed to parse $key.")
     echo -e "$value"
 }
 
@@ -70,14 +66,21 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
-    if [[ $? -ne 0 || "$volumes" == "null" ]]; then
-        echo -e ""
-        exit 1
-    fi
+    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ' || Error "Failed to parse volumes.")
     ExpandVariables "$volumes"
 }
 
+CreateVolumeDirs() {
+    # dont forget about the colon
+    local volumes=$(echo "$profile" | jq -r '.volumes[] | . + ":"' | tr '\n' ' ' || Error "Failed to parse volumes.")
+    local volumeDirs=$(ExpandVariables "$volumes" | awk -F':' '{print $1}' | awk '!seen[$0]++' || Error "Failed to parse volume directories.")
+    for volumeDir in $volumeDirs; do
+        if [[ ! -d "$volumeDir" ]]; then
+            PrintInfo "Creating volume directory $volumeDir..."
+            mkdir -p "$volumeDir" || Error "Failed to create volume directory $volumeDir."
+        fi
+    done
+}
 
 FindProjectConfig() {
     local paths=(
