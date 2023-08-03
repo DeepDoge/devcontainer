@@ -213,7 +213,11 @@ PrintInfo "Profile: $profileName"
 PrintInfo "Starting devcontainer for project $(String "$projectName") with profile $(String "$profileName")"
 
 CreateProfileVolumeDirs
-devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) || Error "Failed to start devcontainer."
+devcontainer up \
+    --workspace-folder=$(String "$projectDir") \
+    $(CreateProfileVolumeArgs) \
+    --mount type=bind,source="$homeDirectory/.gitconfig",target="/etc/gitconfig" \
+    || Error "Failed to start devcontainer."
 containerInfo=$(devcontainer up --workspace-folder=$(String "$projectDir")) && [[ -z "$containerInfo" ]] && Error "Failed to receive devcontainer info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: $(String "$containerId")."PrintInfo "Container workdir: $(String "$containerWorkdir")."
