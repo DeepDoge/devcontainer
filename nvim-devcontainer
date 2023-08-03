@@ -1,8 +1,5 @@
 #!/bin/bash
 
-set -E
-trap '[ "$?" -ne 77 ] || exit 77' ERR SIGINT SIGTERM
-
 green='\033[1;32m'
 darkRed='\033[0;31m'
 comment='\033[0;33m'
@@ -22,15 +19,15 @@ PrintCommand() {
 
 PrintError() {
     local message=$1
-    echo -e "[${red}ERROR${nc}] ${darkRed}$message${nc}" >&2
+    echo -e "[${red}ERROR${nc}] ${darkRed}$message${nc}"
 }
 
-Panic() {
+Error() {
     local message=$1
     local beforeExit=$2
     PrintError "$message" ;
     [[ -n "$beforeExit" ]] && $beforeExit
-    exit 77
+    exit 1
 }
 
 JqSafe() {
@@ -39,7 +36,7 @@ JqSafe() {
     if [ $? -eq 0 ] && [ -n "$output" ]; then
         echo "$output"
     else
-        Panic "Failed to parse JSON data with jq."
+        Error "Failed to parse JSON data with jq."
     fi
 }
 
@@ -148,9 +145,9 @@ else
 fi
 projectName=$(basename "$projectPath")
 
-projectConfigPath=$(FindProjectConfig) && [[ ! -f "$projectConfigPath" ]] && Panic "No devcontainer.json found."
+projectConfigPath=$(FindProjectConfig) && [[ ! -f "$projectConfigPath" ]] && Error "No devcontainer.json found."
 projectConfigDir=$(dirname "$projectConfigPath")
-projectConfig=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$projectConfigPath") && [[ -z "$projectConfig" ]] && Panic "Failed to read devcontainer.json."
+projectConfig=$(sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d' "$projectConfigPath") && [[ -z "$projectConfig" ]] && Error "Failed to read devcontainer.json."
 
 containerId=$(docker ps -aq -f "label=nvim-devcontainer-$projectPath")
 containerLabel="nvim-devcontainer-$projectPath"
@@ -160,7 +157,7 @@ if [[ -n "$config_Dockerfile" ]]; then
     dockerfilePath="$projectConfigDir/$config_Dockerfile"
     config_Image="nvim-devcontainer--$projectName--$(sha256sum "$dockerfilePath" | awk '{print $1}')"
 else
-    config_Image=$(GetConfigValue 'image') && [[ -z "$config_Image" ]] && Panic "No image specified in devcontainer.json."
+    config_Image=$(GetConfigValue 'image') && [[ -z "$config_Image" ]] && Error "No image specified in devcontainer.json."
 fi
 
 PrintInfo "Using Docker image \"$config_Image\"..."
@@ -219,19 +216,19 @@ mkdir -p "$profilesDir"
 if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
     echo -e "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
 fi
-arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Panic "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
-profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Panic "Profile \"$arg_ProfileName\" not found."
-profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Panic "Failed to read profile \"$arg_ProfileName\"."
+arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Error "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
+profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile \"$arg_ProfileName\" not found."
+profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile \"$arg_ProfileName\"."
 
 # All variables are ready at this point
 
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
         PrintInfo "Building Docker image using $dockerfilePath..."
-        docker build -t "$config_Image" -f "$dockerfilePath" "$projectConfigDir" || Panic "Building Docker image failed."
+        docker build -t "$config_Image" -f "$dockerfilePath" "$projectConfigDir" || Error "Building Docker image failed."
     else
         PrintInfo "Pulling Docker image \"$config_Image\"..."
-        docker pull "$config_Image" || Panic "Pulling Docker image failed."
+        docker pull "$config_Image" || Error "Pulling Docker image failed."
     fi
 
     PrintInfo "Creating container for \"$projectPath\" project..."
@@ -251,12 +248,12 @@ if [ -z "$containerId" ]; then
             while [ \$(ls /dev/pts | wc -l) -gt 1 ]; do
                 sleep 10
             done
-        " || Panic "Creating container failed."
+        " || Error "Creating container failed."
 
     containerId=$(docker ps -aq -f "label=$containerLabel")
 
-    CreationPanic() {
-        Panic "Creating container failed." "docker rm -f $containerId"
+    CreationError() {
+        Error "Creating container failed." "docker rm -f $containerId"
     }
 
     docker exec -u "$config_RemoteUser" \
@@ -264,10 +261,10 @@ if [ -z "$containerId" ]; then
         bash -c "            
             sudo chown -R $config_RemoteUser /workspaces
             sudo chown -R $config_RemoteUser $containerHomeDir
-        " || CreationPanic
+        " || CreationError
 
-    ExecuteProfileCommand "installCommand" || CreationPanic
-    ExecuteConfigCommand "postCreateCommand" || CreationPanic
+    ExecuteProfileCommand "installCommand" || CreationError
+    ExecuteConfigCommand "postCreateCommand" || CreationError
 
     PrintInfo "Container created with ID \"$containerId\"."
 fi
@@ -282,7 +279,7 @@ AttachWithBash() {
 }
 
 AttachingFailed() {
-    Panic "Attaching to the container failed." "AttachWithBash"
+    Error "Attaching to the container failed." "AttachWithBash"
 }
 
 if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; then
@@ -291,6 +288,6 @@ if [ "$(docker inspect -f '{{.State.Running}}' "$containerId")" == "false" ]; th
     ExecuteConfigCommand "postStartCommand" || AttachingFailed
 fi
 
-ExecuteProfileCommand "installCommand" || CreationPanic
+ExecuteProfileCommand "installCommand" || CreationError
 ExecuteConfigCommand "postAttachCommand" || AttachingFailed
 ExecuteProfileCommand "attachCommand" || AttachingFailed
