@@ -30,28 +30,31 @@ Panic() {
     exit 1
 }
 
+JqSafe() {
+    JqSafe -e "$@" >/dev/null
+    if [ $? -ne 0 ]; then
+        Panic "Failed to parse JSON data with jq."
+    fi
+}
+
 ExpandVariables() {
     local value="$1"
     echo -e "$(source <(echo -e "echo \$\"$value\""))"
 }
 
-GetProfileValue() {
+GetProfileValue() { 
     local key="$1"
-    local value=$(echo -e "$profile" | jq -r ".${key}")
-    if [[ "$value" != "null" ]]; then
-        echo -e "$value"
-        return
-    fi
-
-    echo -e ""
+    local value=$(echo -e "$profile" | JqSafe -er ".${key}" || echo "")
+    echo -e "$value"
 }
+
 
 ExecuteProfileCommand() {
     local key="$1"
     local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
-        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")')
+        local commands=$(echo -e "$profile_commands" | JqSafe -r 'join("\n")')
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse $key commands."
             return 1
@@ -70,7 +73,7 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
+    local volumes=$(echo "$profile" | JqSafe -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
     ExpandVariables "$volumes"
 }
 
@@ -92,13 +95,13 @@ FindProjectConfig() {
 GetConfigValue() {
     local key="$1"
 
-    local value=$(echo -e "$projectConfig" | jq -r ".$key")
+    local value=$(echo -e "$projectConfig" | JqSafe -r ".$key")
     if [[ "$value" != "null" ]]; then
         echo -e "$value"
         return
     fi
 
-    local metadataValue=$(echo -e "$imageConfig" | jq -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
+    local metadataValue=$(echo -e "$imageConfig" | JqSafe -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
     if [[ "$metadataValue" != "" && "$metadataValue" != "null" ]]; then
         echo -e "$metadataValue"
         return
