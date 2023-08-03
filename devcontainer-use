@@ -178,7 +178,7 @@ devContainerConfigs=$(devcontainer read-configuration --include-features-configu
 if [[ -z "$devContainerConfigs" ]]; then
     Error "Failed to read devcontainer configuration."
 fi
-PrintInfo "Devcontainer configs: $(echo $devContainerConfigs | jq)
+PrintInfo "Devcontainer configs: $(echo $devContainerConfigs | jq)"
 remoteUser=$(GetConfigValue "remoteUser") && [[ -z "$remoteUser" ]] && remoteUser="root"
 if [[ "$remoteUser" == "root" ]]; then
     remoteUserHomeDir="/root"
@@ -216,7 +216,8 @@ AttachingError() {
 }
 
 InstallError() {
-    Error "Installing profile to the container failed." "AttachWithBash ; docker rm -f $containerId"
+    trap "docker rm -f $containerId" EXIT
+    Error "Installing profile to the container failed." "AttachWithBash"
 }
 
 ExecuteProfileCommand "installCommand" || InstallError
