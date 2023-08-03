@@ -68,6 +68,13 @@ Error() {
     exit 1
 }
 
+String() {
+    local string="$1"
+    # Escape backslashes and double quotes with sed
+    string=$(echo "$string" | sed 's/\\/\\\\/g; s/"/\\"/g')
+    echo \""$string"\"
+}
+
 ExpandVariables() {
     local value="$1"
     echo -e "$(source <(echo -e "echo -e \$\"$value\""))"
@@ -89,7 +96,7 @@ ExecuteProfileCommand() {
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key"
         PrintCommand "$expanded_commands"
-        devcontainer exec --workspace-folder=\""$projectDir"\" bash -c "$expanded_commands" || PrintError "Executing $key failed." ; return 1
+        devcontainer exec --workspace-folder=$(String "$projectDir") bash -c "$expanded_commands" || PrintError "Executing $key failed." ; return 1
     fi
     return 0
 }
@@ -166,14 +173,14 @@ if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
 fi
 arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Error "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
 profileName="$arg_ProfileName"
-profilePath="$profilesDir/$profileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile \"$profileName\" not found."
-profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile \"$profileName\"."
+profilePath="$profilesDir/$profileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile $(String "$profileName") not found."
+profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile $(String "$profileName")."
 
 PrintInfo "Profile: $profileName"
 
 # Devcontainer configs
 
-devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder=\""$projectDir"\")
+devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder=$(String "$projectDir"))
 if [[ -z "$devContainerConfigs" ]]; then
     Error "Failed to read devcontainer configuration."
 fi
@@ -189,21 +196,21 @@ workDir=$(GetConfigValue "workspace.workspaceFolder") && [[ -z "$workDir" ]] && 
 
 # All variables are ready at this point
 
-PrintInfo "Starting devcontainer for project \"$projectName\" with profile \"$profileName\""
+PrintInfo "Starting devcontainer for project $(String "$projectName") with profile $(String "$profileName")"
 
 PrintCommand "$(CreateProfileVolumeArgs)"
 CreateProfileVolumeDirs
-devcontainer up --workspace-folder=\""$projectDir"\" $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
-containerInfo=$(devcontainer up --workspace-folder=\""$projectDir"\" $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
+devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
+containerInfo=$(devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
-PrintInfo "Container ID: \"$containerId\"."PrintInfo "Container workdir: \"$containerWorkdir\"."
+PrintInfo "Container ID: $(String "$containerId")."PrintInfo "Container workdir: $(String "$containerWorkdir")."
 
 # When this script ends check if container has pts. If not, stop it.
 trap "StopContainerIfItHasNoPts $containerId" EXIT
 
 # Attach to the container
 
-PrintInfo "Attaching to the container \"$containerId\" project"
+PrintInfo "Attaching to the container $(String "$containerId") project"
 
 AttachingError() {
     Error "Attaching to the container failed." "AttachWithBash"
@@ -212,7 +219,7 @@ AttachingError() {
 InstallError() {
     trap "docker rm -f $containerId" EXIT
     Error "Installing profile to the container failed.\nAttaching to the container with bash for debugging." \
-        "devcontainer exec --workspace-folder=\"$projectDir\" bash"
+        "devcontainer exec --workspace-folder=$(String "$projectDir") bash"
 }
 
 ExecuteProfileCommand "installCommand" || InstallError
