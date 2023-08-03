@@ -178,7 +178,7 @@ defaultProfile='{
         "$configDir/nvim/local/state:$containerHomeDir/.local/state",
         "$configDir/nvim/local/share/nvim:$containerHomeDir/.local/share/nvim",
         "$configDir/nvim/local/share/nvim-linux64:$containerHomeDir/.local/share/nvim-linux64",
-        "$configDir/nvim/lazygit:$containerHomeDir/.local/share/lazygit_x86_64",
+        "$configDir/nvim/lazygit:$containerHomeDir/.local/share/lazygit_x86_64"
     ],
     "env": {},
     "installCommand": [
