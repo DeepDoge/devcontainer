@@ -36,7 +36,7 @@ JqSafe() {
     if [ $? -eq 0 ]; then
         echo "$output"
     else
-        Error "Failed to parse JSON data with jq."
+        Error ""
     fi
 }
 
