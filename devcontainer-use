@@ -126,13 +126,17 @@ GetConfigValue() {
 }
 
 StopContainerIfItHasNoPts() {
-    local containerId="$1"
-    local ptsCount=$(docker exec -it "$containerId" bash -c "ls /dev/pts | wc -l")
-    if [[ "$ptsCount" -eq 0 ]]; then
-        PrintInfo "Stopping container $containerId because it has no pts."
-        docker stop "$containerId"
+    # if container still exists and has no pts, stop it
+    local containerId=$1
+    
+    if [[ -n "$containerId" ]]; then
+        local containerHasNoPts=$(docker container inspect "$containerId" | jq -er '.[0].State.Pid == 0') && \
+            [[ "$containerHasNoPts" == "true" ]] && \
+            PrintInfo "Stopping container $containerId" && \
+            docker container stop "$containerId"
     fi
 }
+
 
 
 homeDirectory="$HOME"
