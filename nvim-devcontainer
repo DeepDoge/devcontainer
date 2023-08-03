@@ -24,9 +24,9 @@ PrintError() {
 
 Error() {
     local message=$1
-    local beforeExit=$2
+    local finally=$2
     PrintError "$message" ;
-    [[ -n "$beforeExit" ]] && $beforeExit
+    [[ -n "$finally" ]] && $finally
     exit 1
 }
 
@@ -206,7 +206,7 @@ defaultProfile='{
         "mkdir -p $containerHomeDir/.local/bin &&",
         "cd $containerHomeDir/.local/bin/ &&",
         "ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
-        "ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit",
+        "ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
     ],
     "attachCommand": ["$containerHomeDir/.local/bin/nvim"]
 }';
