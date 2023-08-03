@@ -178,7 +178,7 @@ devContainerConfigs=$(devcontainer read-configuration --include-features-configu
 if [[ -z "$devContainerConfigs" ]]; then
     Error "Failed to read devcontainer configuration."
 fi
-PrintInfo "Devcontainer configs: $devContainerConfigs"
+PrintInfo "Devcontainer configs: $($devContainerConfigs | jq)"
 remoteUser=$(GetConfigValue "remoteUser") && [[ -z "$remoteUser" ]] && remoteUser="root"
 if [[ "$remoteUser" == "root" ]]; then
     remoteUserHomeDir="/root"
