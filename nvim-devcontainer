@@ -200,9 +200,9 @@ defaultProfile='{
         "chmod +x \"$containerHomeDir/.local/share/lazygit_x86_64/lazygit\" &&",
         "",
         "mkdir -p $containerHomeDir/.local/bin &&",
-        "cd $containerHomeDir/.local/bin/ &&",
-        "ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
-        "ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
+        "cd /usr/bin/ &&",
+        "sudo ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
+        "sudo ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
     ],
     "attachCommand": ["$containerHomeDir/.local/bin/nvim"]
 }';
