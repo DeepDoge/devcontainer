@@ -199,6 +199,11 @@ workDir=$(GetConfigValue "workspace.workspaceFolder") && [[ -z "$workDir" ]] && 
 PrintInfo "Starting devcontainer for project $(String "$projectName") with profile $(String "$profileName")"
 
 PrintCommand "$(CreateProfileVolumeArgs)"
+isRunning=true && $(devcontainer exec --workspace-folder=$(String "$projectDir") echo -e "" >/dev/null 2>&1) || isRunning=false
+if [[ "$isRunning" == "false" ]]; then
+    PrintInfo "Profile volumes:"
+    PrintCommand $(GetProfileValue "volumes" | jq -r '.[]')
+fi
 CreateProfileVolumeDirs
 devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
 containerInfo=$(devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
