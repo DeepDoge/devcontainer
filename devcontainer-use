@@ -202,7 +202,7 @@ PrintCommand "$(CreateProfileVolumeArgs)"
 isRunning=true && $(devcontainer exec --workspace-folder=$(String "$projectDir") echo -e "" >/dev/null 2>&1) || isRunning=false
 if [[ "$isRunning" == "false" ]]; then
     PrintInfo "Profile volumes:"
-    PrintCommand $(GetProfileValue "volumes" | jq -r 'join("\n")'
+    PrintCommand $(GetProfileValue "volumes" | jq -r 'join("\n")')
 fi
 CreateProfileVolumeDirs
 devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
