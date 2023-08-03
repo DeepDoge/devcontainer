@@ -31,10 +31,9 @@ Error() {
 }
 
 JqSafe() {
-    local output
-    output=$(echo "$@" | jq .)
+    local output=$(jq $@)
     if [ $? -eq 0 ]; then
-        echo "$output"
+        echo -e "$output"
     else
         exit 1
     fi
