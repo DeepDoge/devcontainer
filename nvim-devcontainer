@@ -31,7 +31,6 @@ Panic() {
 }
 
 ExpandVariables() {
-    # using envsubst
     local value="$1"
     echo -e "$(source <(echo -e "echo \$\"$value\""))"
 }
@@ -71,7 +70,7 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    ExpandVariables $(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
+    ExpandVariables "$(echo \"$profile\" | jq -r '.volumes[] | \"-v \(.)\"' | tr '\n' ' ')"
 }
 
 
