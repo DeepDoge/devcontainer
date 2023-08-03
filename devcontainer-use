@@ -129,11 +129,11 @@ StopContainerIfItHasNoPts() {
     # if container still exists and has no pts, stop it
     local containerId=$1
     
-    if [[ -n "$containerId" ]]; then
-        local containerHasNoPts=$(docker container inspect "$containerId" | jq -er '.[0].State.Pid == 0') && \
-            [[ "$containerHasNoPts" == "true" ]] && \
-            PrintInfo "Stopping container $containerId" && \
-            docker container stop "$containerId"
+
+    local containerHasNoPts=$(docker container inspect "$containerId" | jq -er '.[0].State.Pid == 0')
+    if [[ "$containerHasNoPts" == "true" ]]; then
+        PrintInfo "Stopping container $containerId"
+        docker container stop "$containerId" >/dev/null
     fi
 }
 
