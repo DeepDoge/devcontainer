@@ -96,7 +96,7 @@ ExecuteProfileCommand() {
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key"
         PrintCommand "$expanded_commands"
-        devcontainer exec --workspace-folder=$(String "$projectDir") bash -c "$expanded_commands" || PrintError "Executing $key failed." ; return 1
+        devcontainer exec --workspace-folder=$(String "$projectDir") bash -c "$expanded_commands" || { PrintError "Executing $key failed."; return 1; }
     fi
     return 0
 }
