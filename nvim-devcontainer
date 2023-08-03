@@ -36,7 +36,7 @@ JqSafe() {
     if [ $? -eq 0 ]; then
         echo "$output"
     else
-        Error ""
+        exit 1
     fi
 }
 
