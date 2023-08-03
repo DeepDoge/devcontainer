@@ -49,7 +49,7 @@ ExecuteProfileCommand() {
     if [ -n "$profile_commands" ]; then
         local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")') && [[ -z "$commands" ]] && Error "Failed to parse $key."
         local expanded_commands=$(ExpandVariables "$commands")
-        PrintInfo "Executing profile command $key..."
+        PrintInfo "Executing profile command $key"
         PrintCommand "$expanded_commands"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$expanded_commands"
         if [[ $? -ne 0 ]]; then
@@ -114,7 +114,7 @@ ExecuteConfigCommand() {
     local command=$(GetConfigValue "$key")
 
     if [[ -n "$command" ]]; then
-        PrintInfo "Executing config command $key..."
+        PrintInfo "Executing config command $key"
         PrintCommand "$command"
         docker exec -u "$config_RemoteUser" -it "$containerId" bash -c "$command"
         if [[ $? -ne 0 ]]; then
@@ -154,7 +154,7 @@ else
     config_Image=$(GetConfigValue 'image') && [[ -z "$config_Image" ]] && Error "No image specified in devcontainer.json."
 fi
 
-PrintInfo "Using Docker image \"$config_Image\"..."
+PrintInfo "Using Docker image $config_Image"
 imageConfig=$(docker inspect --format='{{index .Config.Labels "devcontainer.metadata"}}' "$config_Image")
 config_RemoteUser=$(GetConfigValue 'remoteUser')
 if [[ -z "$config_RemoteUser" ]]; then
@@ -216,21 +216,21 @@ profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$p
 
 containerLabel="nvim-devcontainer:$projectPath:$config_Image"
 containerId=$(docker ps -aq -f "label=$containerLabel")
-PrintInfo "Container label: $containerLabel"
+PrintInfo "Using container label $containerLabel"
+PrintInfo "Using container id $containerId"
 
 # All variables are ready at this point
 
-
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
-        PrintInfo "Building Docker image using $dockerfilePath..."
+        PrintInfo "Building Docker image using $dockerfilePath"
         docker build -t "$config_Image" -f "$dockerfilePath" "$projectConfigDir" || Error "Building Docker image failed."
     else
-        PrintInfo "Pulling Docker image \"$config_Image\"..."
+        PrintInfo "Pulling Docker image $config_Image"
         docker pull "$config_Image" || Error "Pulling Docker image failed."
     fi
 
-    PrintInfo "Creating container for \"$projectPath\" project..."
+    PrintInfo "Creating container for $projectPath project"
 
     PrintCommand "$(ProfileVolumesAsDockerArgs)"
     CreateVolumeDirs
@@ -271,10 +271,10 @@ fi
 
 # Attach to the container
 
-PrintInfo "Attaching to the container \"$containerId\" project..."
+PrintInfo "Attaching to the container \"$containerId\" project"
 
 AttachWithBash() {
-    PrintInfo "Attaching the container with bash..."
+    PrintInfo "Attaching the container with bash"
     docker exec -u "$config_RemoteUser" -it "$containerId" bash
 }
 
