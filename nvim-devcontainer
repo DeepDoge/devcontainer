@@ -214,8 +214,8 @@ arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Error "No profile name spec
 profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile \"$arg_ProfileName\" not found."
 profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile \"$arg_ProfileName\"."
 
-containerId=$(docker ps -aq -f "label=nvim-devcontainer-$projectPath")
 containerLabel="nvim-devcontainer:$projectPath:$config_Image"
+containerId=$(docker ps -aq -f "label=$containerLabel")
 
 # All variables are ready at this point
 
