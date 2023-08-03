@@ -30,7 +30,7 @@ The container will be stopped automatically when you exit from the container's s
 
 Default `nvim` profile will be inside `~/.config/devcontainer-use/profiles/nvim.json`. You can create your own profiles by creating new JSON files inside `~/.config/devcontainer-use/profiles/`.
 
-## Default Nvim Profile
+#### Default Nvim Profile
 
 Default `nvim` profile will install `nvim`, `lazyvim` and `lazygit` inside the container.
 
