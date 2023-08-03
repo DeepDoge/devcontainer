@@ -219,6 +219,8 @@ containerLabel="nvim-devcontainer:$projectPath:$config_Image"
 
 # All variables are ready at this point
 
+PrintInfo "Container label: $containerLabel"
+
 if [ -z "$containerId" ]; then
     if [[ -n "$config_Dockerfile" ]]; then
         PrintInfo "Building Docker image using $dockerfilePath..."
