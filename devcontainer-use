@@ -37,7 +37,6 @@ defaultProfile='{
         "chmod +x \"$remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim\" &&",
         "chmod +x \"$remoteUserHomeDir/.local/share/lazygit_x86_64/lazygit\" &&",
         "",
-        "mkdir -p $remoteUserHomeDir/.local/bin &&",
         "cd /usr/bin/ &&",
         "sudo ln -sf $remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
         "sudo ln -sf $remoteUserHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
