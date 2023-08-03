@@ -9,40 +9,40 @@ nc='\033[0m'
 defaultProfileName="nvim"
 defaultProfile='{
     "volumes": [
-        "$configDir/nvim/config:$containerHomeDir/.config/nvim",
-        "$configDir/nvim/cache:$containerHomeDir/.cache/nvim",
-        "$configDir/nvim/local/state:$containerHomeDir/.local/state",
-        "$configDir/nvim/local/share/nvim:$containerHomeDir/.local/share/nvim",
-        "$configDir/nvim/local/share/nvim-linux64:$containerHomeDir/.local/share/nvim-linux64",
-        "$configDir/nvim/lazygit:$containerHomeDir/.local/share/lazygit_x86_64"
+        "$configDir/nvim/config:$remoteUserHomeDir/.config/nvim",
+        "$configDir/nvim/cache:$remoteUserHomeDir/.cache/nvim",
+        "$configDir/nvim/local/state:$remoteUserHomeDir/.local/state",
+        "$configDir/nvim/local/share/nvim:$remoteUserHomeDir/.local/share/nvim",
+        "$configDir/nvim/local/share/nvim-linux64:$remoteUserHomeDir/.local/share/nvim-linux64",
+        "$configDir/nvim/lazygit:$remoteUserHomeDir/.local/share/lazygit_x86_64"
     ],
     "env": {},
     "installCommand": [
-        "if [ ! -f $containerHomeDir/.local/share/nvim-linux64/bin/nvim ]; then",
+        "if [ ! -f $remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim ]; then",
         "   cd /tmp &&",
         "   curl -LO \"https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz\" &&",
         "   tar xzf nvim-linux64.tar.gz &&",
-        "   mv ./nvim-linux64/* $containerHomeDir/.local/share/nvim-linux64/ &&",
+        "   mv ./nvim-linux64/* $remoteUserHomeDir/.local/share/nvim-linux64/ &&",
         "   git clone https://github.com/LazyVim/starter ~/.config/nvim &&",
         "   rm -rf ~/.config/nvim/.git",
         "fi",
         "",
-        "if [ ! -f $containerHomeDir/.local/share/lazygit_x86_64/lazygit ]; then",
+        "if [ ! -f $remoteUserHomeDir/.local/share/lazygit_x86_64/lazygit ]; then",
         "   cd /tmp &&",
         "   curl -LO https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz",
         "   tar xzf lazygit_0.39.4_Linux_x86_64.tar.gz",
-        "   mv lazygit $containerHomeDir/.local/share/lazygit_x86_64",
+        "   mv lazygit $remoteUserHomeDir/.local/share/lazygit_x86_64",
         "fi",
         "",
-        "chmod +x \"$containerHomeDir/.local/share/nvim-linux64/bin/nvim\" &&",
-        "chmod +x \"$containerHomeDir/.local/share/lazygit_x86_64/lazygit\" &&",
+        "chmod +x \"$remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim\" &&",
+        "chmod +x \"$remoteUserHomeDir/.local/share/lazygit_x86_64/lazygit\" &&",
         "",
-        "mkdir -p $containerHomeDir/.local/bin &&",
+        "mkdir -p $remoteUserHomeDir/.local/bin &&",
         "cd /usr/bin/ &&",
-        "sudo ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
-        "sudo ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
+        "sudo ln -sf $remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
+        "sudo ln -sf $remoteUserHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
     ],
-    "attachCommand": ["$containerHomeDir/.local/share/nvim-linux64/bin/nvim"]
+    "attachCommand": ["$remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim"]
 }';
 
 PrintInfo() {
@@ -177,6 +177,12 @@ PrintInfo "Profile: $profileName"
 devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder "$projectDir")
 if [[ -z "$devContainerConfigs" ]]; then
     Error "Failed to read devcontainer configuration."
+fi
+remoteUser=$(GetConfigValue "remoteUser") && [[ -z "$remoteUser" ]] remoteUser="root"
+if [[ "$remoteUser" == "root" ]]; then
+    remoteUserHomeDir="/root"
+else
+    remoteUserHomeDir="/home/$remoteUser"
 fi
 
 # All variables are ready at this point
