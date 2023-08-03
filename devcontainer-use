@@ -89,7 +89,7 @@ ExecuteProfileCommand() {
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key"
         PrintCommand "$expanded_commands"
-        devcontainer exec --workspace-folder "$projectDir" bash -c "$expanded_commands" || PrintError "Executing $key failed." ; return 1
+        devcontainer exec --workspace-folder=\""$projectDir"\" bash -c "$expanded_commands" || PrintError "Executing $key failed." ; return 1
     fi
     return 0
 }
@@ -173,7 +173,7 @@ PrintInfo "Profile: $profileName"
 
 # Devcontainer configs
 
-devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder "$projectDir")
+devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder=\""$projectDir"\")
 if [[ -z "$devContainerConfigs" ]]; then
     Error "Failed to read devcontainer configuration."
 fi
@@ -193,8 +193,8 @@ PrintInfo "Starting devcontainer for project \"$projectName\" with profile \"$pr
 
 PrintCommand "$(CreateProfileVolumeArgs)"
 CreateProfileVolumeDirs
-devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
-containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
+devcontainer up --workspace-folder=\""$projectDir"\" $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
+containerInfo=$(devcontainer up --workspace-folder=\""$projectDir"\" $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: \"$containerId\"."PrintInfo "Container workdir: \"$containerWorkdir\"."
 
@@ -212,7 +212,7 @@ AttachingError() {
 InstallError() {
     trap "docker rm -f $containerId" EXIT
     Error "Installing profile to the container failed.\nAttaching to the container with bash for debugging." \
-        "devcontainer exec --workspace-folder \"$projectDir\" bash"
+        "devcontainer exec --workspace-folder=\"$projectDir\" bash"
 }
 
 ExecuteProfileCommand "installCommand" || InstallError
