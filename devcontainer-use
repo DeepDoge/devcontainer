@@ -136,7 +136,7 @@ StopContainerIfItHasNoPts() {
     local containerId=$1
     
     docker exec "$containerId" bash -c '
-        if [ \$(ls /dev/pts | wc -l) -gt 1 ]; then
+        if [ $(ls /dev/pts | wc -l) -gt 1 ]; then
             exit 0
         else
             exit 1
