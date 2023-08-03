@@ -204,7 +204,7 @@ defaultProfile='{
         "sudo ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
         "sudo ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
     ],
-    "attachCommand": ["$containerHomeDir/.local/bin/nvim"]
+    "attachCommand": ["$containerHomeDir/.local/share/nvim-linux64/bin/nvim"],
 }';
 
 
@@ -230,7 +230,6 @@ if [ -z "$containerId" ]; then
     PrintInfo "Creating container for \"$projectPath\" project..."
 
     PrintCommand "$(ProfileVolumesAsDockerArgs)"
-
     CreateVolumeDirs
 
     docker run --net=host -w "/workspaces/$projectName" \
