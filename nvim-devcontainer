@@ -215,7 +215,7 @@ profilePath="$profilesDir/$arg_ProfileName.json" && [[ ! -f "$profilePath" ]] &&
 profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile \"$arg_ProfileName\"."
 
 containerId=$(docker ps -aq -f "label=nvim-devcontainer-$projectPath")
-containerLabel="nvim-devcontainer-$projectPath-$config_Image"
+containerLabel="nvim-devcontainer:$projectPath:$config_Image"
 
 # All variables are ready at this point
 
