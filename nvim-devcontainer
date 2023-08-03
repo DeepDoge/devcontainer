@@ -71,7 +71,7 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    echo -e "$(echo -e \"$profile\" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')"
+    echo $(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
 }
 
 
