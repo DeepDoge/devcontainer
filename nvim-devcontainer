@@ -19,7 +19,7 @@ PrintCommand() {
 
 PrintError() {
     local message=$1
-    echo -e "[${red}ERROR${nc}] ${red2}$message${nc}"
+    echo -e "[${red}ERROR${nc}] ${red2}$message${nc}" >&2
 }
 
 Panic() {
@@ -31,8 +31,11 @@ Panic() {
 }
 
 JqSafe() {
-    JqSafe -e "$@" >/dev/null
-    if [ $? -ne 0 ]; then
+    local output
+    output=$(jq "$@")
+    if [ $? -eq 0 ] && [ -n "$output" ]; then
+        echo "$output"
+    else
         Panic "Failed to parse JSON data with jq."
     fi
 }
