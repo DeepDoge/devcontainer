@@ -76,7 +76,7 @@ ExpandVariables() {
 
 GetProfileValue() { 
     local key="$1"
-    local value=$(echo -e "$profile" | jq -er ".${key}") && [[ "$value" == "null" ]] && Error "Failed to parse profile $key."
+    local value=$(echo -e "$profile" | jq -er ".${key}") && [[ "$value" == "null" ]] && value=""
     echo -e "$value"
 }
 
@@ -121,7 +121,7 @@ CreateProfileVolumeDirs() {
 
 GetConfigValue() { 
     local key="$1"
-    local value=$(echo -e "$devContainerConfigs" | jq -er ".${key}") && [[ "$value" == "null" ]] && Error "Failed to parse devcontainer config $key."
+    local value=$(echo -e "$devContainerConfigs" | jq -er ".${key}") && [[ "$value" == "null" ]] && value=""
     echo -e "$value"
 }
 
