@@ -141,7 +141,10 @@ StopContainerIfItHasNoPts() {
         else
             exit 1
         fi
-    ' || docker stop "$containerId"
+    ' > /dev/null 2>&1 || {
+        PrintInfo "Stopping container $containerId"
+        docker stop "$containerId" > /dev/null 2>&1
+    }
 }
 
 
