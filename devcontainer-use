@@ -160,7 +160,7 @@ PrintInfo "Project directory: $projectDir"
 
 # Profile
 
-profilesDir="$projectDir/profiles"
+profilesDir="$configDir/profiles"
 mkdir -p "$profilesDir"
 if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
     echo -e "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
