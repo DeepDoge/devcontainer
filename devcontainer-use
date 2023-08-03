@@ -71,7 +71,7 @@ Error() {
 
 ExpandVariables() {
     local value="$1"
-    echo -e "$(source <(echo -e "echo \$\"$value\""))"
+    echo -e "$(source <(echo -e "echo -e \$\"$value\""))"
 }
 
 GetProfileValue() { 
