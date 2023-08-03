@@ -47,11 +47,7 @@ ExecuteProfileCommand() {
     local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
-        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")')
-        if [[ $? -ne 0 ]]; then
-            PrintError "Failed to parse $key commands."
-            return 1
-        fi
+        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")' || Error "Failed to parse $key.")
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key..."
         PrintCommand "$expanded_commands"
@@ -66,7 +62,7 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ' || Error "Failed to parse volumes.")
+    local volumes=$(echo $(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' || Error "Failed to parse volumes.") | tr '\n' ' ')
     ExpandVariables "$volumes"
 }
 
