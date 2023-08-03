@@ -208,7 +208,7 @@ AttachingError() {
 }
 
 InstallError() {
-    Error "Installing profile to the container failed." "docker rm -f $containerId"
+    Error "Installing profile to the container failed. Removing container." "docker rm -f $containerId"
 }
 
 ExecuteProfileCommand "installCommand" || InstallError
