@@ -26,7 +26,7 @@ Panic() {
     local message=$1
     local beforeExit=$2
     PrintError "$message" ;
-    # [[ -n "$beforeExit" ]] && $beforeExit
+    [[ -n "$beforeExit" ]] && $beforeExit
     exit 1
 }
 
@@ -37,7 +37,6 @@ JqSafe() {
         echo "$output"
     else
         Panic "Failed to parse JSON data with jq."
-        echo "WTFFF"
     fi
 }
 
@@ -48,7 +47,7 @@ ExpandVariables() {
 
 GetProfileValue() { 
     local key="$1"
-    local value=$(echo -e "$profile" | JqSafe -er ".${key}" || echo "")
+    local value=$(echo -e "$profile" | JqSafe -er ".${key}")
     echo -e "$value"
 }
 
