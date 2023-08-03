@@ -71,7 +71,7 @@ CreateVolumeDirs() {
     for volume in $volumes; do
         local volumeDir=$(ExpandVariables "$volume" | awk -F':' '{print $1}')
         if [[ ! -d "$volumeDir" ]]; then
-            PrintInfo "Creating volume directory $volumeDir..."
+            PrintInfo "Creating volume directory $volumeDir"
             mkdir -p "$volumeDir"
         fi
     done
