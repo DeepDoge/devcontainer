@@ -197,6 +197,7 @@ defaultProfile='{
         "fi",
         "",
         "chmod +x \"$containerHomeDir/.local/share/nvim-linux64/bin/nvim\" &&",
+        "chmod +x \"$containerHomeDir/.local/share/lazygit_x86_64/lazygit\" &&",
         "",
         "mkdir -p $containerHomeDir/.local/bin &&",
         "cd $containerHomeDir/.local/bin/ &&",
