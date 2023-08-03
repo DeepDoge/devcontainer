@@ -71,13 +71,11 @@ ProfileVolumesAsDockerArgs() {
 }
 
 CreateVolumeDirs() {
-    # dont forget about the colon
-    local volumes=$(echo "$profile" | jq -r '.volumes[] | . + ":"' | tr '\n' ' ' || Error "Failed to parse volumes.")
-    local volumeDirs=$(ExpandVariables "$volumes" | awk -F':' '{print $1}' | awk '!seen[$0]++' || Error "Failed to parse volume directories.")
+    local volumeDirs=$(echo "$profile" | jq -r '.volumes[] | split(":")[0] | .[0]' | ExpandVariables | xargs -n 1 dirname | sort | uniq || Error "Failed to parse volumes.")
     for volumeDir in $volumeDirs; do
         if [[ ! -d "$volumeDir" ]]; then
-            PrintInfo "Creating volume directory $volumeDir..."
-            mkdir -p "$volumeDir" || Error "Failed to create volume directory $volumeDir."
+            PrintInfo "Creating directory $volumeDir"
+            mkdir -p "$volumeDir" || Error "Failed to create directory $volumeDir."
         fi
     done
 }
