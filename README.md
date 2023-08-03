@@ -6,7 +6,7 @@ README is old
 
 # devcontainer-use
 
-`devcontainer-use` is a tool that allows you to build and run Docker containers with a NeoVim development environment based on a `devcontainer.json` file in your project. It utilizes the [devcontainer.json](https://code.visualstudio.com/docs/remote/devcontainerjson-reference) file format from [Visual Studio Code Remote - Containers](https://code.visualstudio.com/docs/remote/containers) with [devcontainer-cli](https://github.com/devcontainers/cli) to build and run the Docker containers.
+`devcontainer-use` is a tool that helps you create and use development environments inside Docker containers. It utilizes the [devcontainer.json](https://code.visualstudio.com/docs/remote/devcontainerjson-reference) file format from [Visual Studio Code Remote - Containers](https://code.visualstudio.com/docs/remote/containers) with [devcontainer-cli](https://github.com/devcontainers/cli) to build and run the Docker containers.
 
 It let's you use different profiles to work inside the container, such as `nvim`.
 
