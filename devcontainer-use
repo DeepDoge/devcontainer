@@ -168,20 +168,6 @@ projectName=$(basename "$projectDir")
 
 PrintInfo "Project directory: $projectDir"
 
-# Profile
-
-profilesDir="$configDir/profiles"
-mkdir -p "$profilesDir"
-if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
-    echo -e "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
-fi
-arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Error "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
-profileName="$arg_ProfileName"
-profilePath="$profilesDir/$profileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile $(String "$profileName") not found."
-profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile $(String "$profileName")."
-
-PrintInfo "Profile: $profileName"
-
 # Devcontainer configs
 
 devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder=$(String "$projectDir"))
@@ -203,6 +189,21 @@ else
     remoteUserHomeDir="/home/$remoteUser"
 fi
 workDir=$(GetConfigValue "workspace.workspaceFolder") && [[ -z "$workDir" ]] && Error "Failed to parse workspaceFolder."
+
+# Profile
+# Profile variables are being set last so the profile can use all variables when expanding
+
+profilesDir="$configDir/profiles"
+mkdir -p "$profilesDir"
+if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
+    echo -e "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
+fi
+arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Error "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
+profileName="$arg_ProfileName"
+profilePath="$profilesDir/$profileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile $(String "$profileName") not found."
+profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile $(String "$profileName")."
+
+PrintInfo "Profile: $profileName"
 
 # All variables are ready at this point
 
