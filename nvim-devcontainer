@@ -217,7 +217,6 @@ profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$p
 containerLabel="nvim-devcontainer:$projectPath:$config_Image"
 containerId=$(docker ps -aq -f "label=$containerLabel")
 PrintInfo "Using container label $containerLabel"
-PrintInfo "Using container id $containerId"
 
 # All variables are ready at this point
 
