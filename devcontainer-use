@@ -185,8 +185,8 @@ PrintInfo "Starting devcontainer for project \"$projectName\" with profile \"$pr
 
 PrintCommand "$(CreateProfileVolumeArgs)"
 CreateProfileVolumeDirs
-devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)
-containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)) || Error "Failed to up devcontainer."
+devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
+containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: \"$containerId\"."
 containerWorkdir=$(echo -e "$containerInfo" | jq -er '.remoteWorkspaceFolder') && [[ "$containerWorkdir" == "null" ]] && Error "Failed to parse container workdir."
