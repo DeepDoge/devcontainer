@@ -70,7 +70,8 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    ExpandVariables "$(echo \"$profile\" | jq -r '.volumes[] | \"-v \(.)\"' | tr '\n' ' ')"
+    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
+    ExpandVariables "$volumes"
 }
 
 
