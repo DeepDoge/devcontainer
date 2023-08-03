@@ -19,7 +19,7 @@ PrintCommand() {
 
 PrintError() {
     local message=$1
-    echo -e "[${red}ERROR${nc}] ${red2}$message${nc}" >&2
+    echo -e "[${red}ERROR${nc}] ${red2}$message${nc}"
 }
 
 Panic() {
