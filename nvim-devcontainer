@@ -26,7 +26,7 @@ Panic() {
     local message=$1
     local beforeExit=$2
     PrintError $"$message"
-    [[ -n "$beforeExit" ]] && $beforeExit
+    # [[ -n "$beforeExit" ]] && $beforeExit
     exit 1
 }
 
