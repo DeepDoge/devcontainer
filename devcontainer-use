@@ -96,7 +96,10 @@ ExecuteProfileCommand() {
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key"
         PrintCommand "$expanded_commands"
-        devcontainer exec --workspace-folder=$(String "$projectDir") bash -c "$expanded_commands" || { PrintError "Executing $key failed."; return 1; }
+        devcontainer exec --workspace-folder=$(String "$projectDir") bash -c "
+            export SHELL=/bin/bash
+            $expanded_commands
+        " || { PrintError "Executing $key failed."; return 1; }
     fi
     return 0
 }
@@ -210,7 +213,7 @@ PrintInfo "Profile: $profileName"
 PrintInfo "Starting devcontainer for project $(String "$projectName") with profile $(String "$profileName")"
 
 CreateProfileVolumeDirs
-devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) --remote-env="SHELL=\"/bin/bash\"" || Error "Failed to start devcontainer."
+devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) || Error "Failed to start devcontainer."
 containerInfo=$(devcontainer up --workspace-folder=$(String "$projectDir")) && [[ -z "$containerInfo" ]] && Error "Failed to receive devcontainer info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: $(String "$containerId")."PrintInfo "Container workdir: $(String "$containerWorkdir")."
