@@ -4,9 +4,9 @@ Anything can change, directory paths, file names, repo name, behavior, etc.
 
 README is old
 
-# devcontainer-env
+# devcontainer-use
 
-`devcontainer-env` is a tool that allows you to build and run Docker containers with a NeoVim development environment based on a `devcontainer.json` file in your project. It provides an isolated NeoVim environment that can be shared between different projects, similar to the experience of [VSCode Dev Containers](https://code.visualstudio.com/docs/remote/containers).
+`devcontainer-use` is a tool that allows you to build and run Docker containers with a NeoVim development environment based on a `devcontainer.json` file in your project. It provides an isolated NeoVim environment that can be shared between different projects, similar to the experience of [VSCode Dev Containers](https://code.visualstudio.com/docs/remote/containers).
 
 ## Note
 
@@ -30,22 +30,22 @@ Requirements:
 - [docker](https://docs.docker.com/get-docker/)
 - [jq](https://stedolan.github.io/jq/download/)
 
-To install `devcontainer-env`, run the following commands in your terminal:
+To install `devcontainer-use`, run the following commands in your terminal:
 
 ```bash
-git clone https://github.com/DeepDoge/devcontainer-env.git /tmp/devcontainer-env && \
-mv /tmp/devcontainer-env/devcontainer-env ~/.local/bin && \
-chmod +x ~/.local/bin/devcontainer-env && \
-rm -rf /tmp/devcontainer-env
+git clone https://github.com/DeepDoge/devcontainer-use.git /tmp/devcontainer-use && \
+mv /tmp/devcontainer-use/devcontainer-use ~/.local/bin && \
+chmod +x ~/.local/bin/devcontainer-use && \
+rm -rf /tmp/devcontainer-use
 ```
 
 ## Uninstallation
 
-To uninstall `devcontainer-env`, run the following command in your terminal:
+To uninstall `devcontainer-use`, run the following command in your terminal:
 
 ```bash
-rm ~/.local/bin/devcontainer-env
-rm -rf ~/.config/devcontainer-env
+rm ~/.local/bin/devcontainer-use
+rm -rf ~/.config/devcontainer-use
 ```
 
 ## Usage
@@ -56,10 +56,10 @@ To create and run a NeoVim development container for your project, follow these 
 
 2. Open a terminal and navigate to your project directory.
 
-3. Run the `devcontainer-env` command:
+3. Run the `devcontainer-use` command:
 
    ```bash
-   devcontainer-env
+   devcontainer-use
    ```
 
    The script will detect the presence of `devcontainer.json` in your project and proceed with the container setup.
@@ -76,7 +76,7 @@ The NeoVim configuration inside the container will be stored in a separate direc
 
 Host:
 ```
-~/.config/devcontainer-env/nvim/config
+~/.config/devcontainer-use/nvim/config
 ```
 
 Container:
@@ -91,12 +91,12 @@ You can customize the Docker image used by editing the `devcontainer.json` file 
 
 ## Contribution
 
-Contributions to `devcontainer-env` are welcome! If you encounter any issues or have suggestions for improvements, feel free to submit an issue or a pull request on the [GitHub repository](https://github.com/DeepDoge/devcontainer-env).
+Contributions to `devcontainer-use` are welcome! If you encounter any issues or have suggestions for improvements, feel free to submit an issue or a pull request on the [GitHub repository](https://github.com/DeepDoge/devcontainer-use).
 
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-Happy coding with `devcontainer-env`! 🚀
+Happy coding with `devcontainer-use`! 🚀
 
 *- Writen by ChatGPT*
