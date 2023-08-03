@@ -179,12 +179,13 @@ if [[ -z "$devContainerConfigs" ]]; then
     Error "Failed to read devcontainer configuration."
 fi
 PrintInfo "Devcontainer configs: $(echo $devContainerConfigs | jq)"
-remoteUser=$(GetConfigValue "remoteUser") && [[ -z "$remoteUser" ]] && remoteUser="root"
+remoteUser=$(GetConfigValue "mergedConfiguration.remoteUser") && [[ -z "$remoteUser" ]] && remoteUser="root"
 if [[ "$remoteUser" == "root" ]]; then
     remoteUserHomeDir="/root"
 else
     remoteUserHomeDir="/home/$remoteUser"
 fi
+workDir=$(GetConfigValue "workspace.workspaceFolder") && [[ -z "$workDir" ]] && Error "Failed to parse workspaceFolder."
 
 # All variables are ready at this point
 
@@ -195,9 +196,7 @@ CreateProfileVolumeDirs
 devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
 containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
-PrintInfo "Container ID: \"$containerId\"."
-containerWorkdir=$(echo -e "$containerInfo" | jq -er '.remoteWorkspaceFolder') && [[ "$containerWorkdir" == "null" ]] && Error "Failed to parse container workdir."
-PrintInfo "Container workdir: \"$containerWorkdir\"."
+PrintInfo "Container ID: \"$containerId\"."PrintInfo "Container workdir: \"$containerWorkdir\"."
 
 # When this script ends check if container has pts. If not, stop it.
 trap "StopContainerIfItHasNoPts $containerId" EXIT
