@@ -30,15 +30,6 @@ Error() {
     exit 1
 }
 
-JqSafe() {
-    local output=$(jq $@)
-    if [ $? -eq 0 ]; then
-        echo -e "$output"
-    else
-        exit 1
-    fi
-}
-
 ExpandVariables() {
     local value="$1"
     echo -e "$(source <(echo -e "echo \$\"$value\""))"
@@ -46,7 +37,11 @@ ExpandVariables() {
 
 GetProfileValue() { 
     local key="$1"
-    local value=$(echo -e "$profile" | JqSafe -er ".${key}")
+    local value=$(echo -e "$profile" | jq -er ".${key}")
+    if [[ $? -ne 0 || "$value" == "null" ]]; then
+        echo -e ""
+        exit 1
+    fi
     echo -e "$value"
 }
 
@@ -56,7 +51,7 @@ ExecuteProfileCommand() {
     local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
-        local commands=$(echo -e "$profile_commands" | JqSafe -r 'join("\n")')
+        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")')
         if [[ $? -ne 0 ]]; then
             PrintError "Failed to parse $key commands."
             return 1
@@ -75,7 +70,11 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    local volumes=$(echo "$profile" | JqSafe -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
+    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ')
+    if [[ $? -ne 0 || "$volumes" == "null" ]]; then
+        echo -e ""
+        exit 1
+    fi
     ExpandVariables "$volumes"
 }
 
@@ -97,13 +96,13 @@ FindProjectConfig() {
 GetConfigValue() {
     local key="$1"
 
-    local value=$(echo -e "$projectConfig" | JqSafe -r ".$key")
+    local value=$(echo -e "$projectConfig" | jq -r ".$key")
     if [[ "$value" != "null" ]]; then
         echo -e "$value"
         return
     fi
 
-    local metadataValue=$(echo -e "$imageConfig" | JqSafe -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
+    local metadataValue=$(echo -e "$imageConfig" | jq -r ". | reverse | .[] | select(.$key != null) | .$key" | head -n 1)
     if [[ "$metadataValue" != "" && "$metadataValue" != "null" ]]; then
         echo -e "$metadataValue"
         return
