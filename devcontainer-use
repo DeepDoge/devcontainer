@@ -210,8 +210,8 @@ PrintInfo "Profile: $profileName"
 PrintInfo "Starting devcontainer for project $(String "$projectName") with profile $(String "$profileName")"
 
 CreateProfileVolumeDirs
-devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) || Error "Failed to up devcontainer."
-containerInfo=$(devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs)) && [[ -z "$containerInfo" ]] && Error "Failed to receive container info"
+devcontainer up --workspace-folder=$(String "$projectDir") $(CreateProfileVolumeArgs) --remote-env SHELL="bash" || Error "Failed to start devcontainer."
+containerInfo=$(devcontainer up --workspace-folder=$(String "$projectDir")) && [[ -z "$containerInfo" ]] && Error "Failed to receive devcontainer info"
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: $(String "$containerId")."PrintInfo "Container workdir: $(String "$containerWorkdir")."
 
