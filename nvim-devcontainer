@@ -32,8 +32,8 @@ Error() {
 
 JqSafe() {
     local output
-    output=$(jq "$@")
-    if [ $? -eq 0 ] && [ -n "$output" ]; then
+    output=$(echo "$@" | jq .)
+    if [ $? -eq 0 ]; then
         echo "$output"
     else
         Error "Failed to parse JSON data with jq."
