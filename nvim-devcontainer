@@ -37,6 +37,7 @@ JqSafe() {
         echo "$output"
     else
         Panic "Failed to parse JSON data with jq."
+        echo "WTFFF"
     fi
 }
 
