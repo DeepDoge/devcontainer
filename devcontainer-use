@@ -1,0 +1,211 @@
+#!/bin/bash
+
+green='\033[1;32m'
+darkRed='\033[0;31m'
+comment='\033[0;33m'
+red='\033[0;91m'
+nc='\033[0m'
+
+defaultProfileName="nvim"
+defaultProfile='{
+    "volumes": [
+        "$configDir/nvim/config:$containerHomeDir/.config/nvim",
+        "$configDir/nvim/cache:$containerHomeDir/.cache/nvim",
+        "$configDir/nvim/local/state:$containerHomeDir/.local/state",
+        "$configDir/nvim/local/share/nvim:$containerHomeDir/.local/share/nvim",
+        "$configDir/nvim/local/share/nvim-linux64:$containerHomeDir/.local/share/nvim-linux64",
+        "$configDir/nvim/lazygit:$containerHomeDir/.local/share/lazygit_x86_64"
+    ],
+    "env": {},
+    "installCommand": [
+        "if [ ! -f $containerHomeDir/.local/share/nvim-linux64/bin/nvim ]; then",
+        "   cd /tmp &&",
+        "   curl -LO \"https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz\" &&",
+        "   tar xzf nvim-linux64.tar.gz &&",
+        "   mv ./nvim-linux64/* $containerHomeDir/.local/share/nvim-linux64/ &&",
+        "   git clone https://github.com/LazyVim/starter ~/.config/nvim &&",
+        "   rm -rf ~/.config/nvim/.git",
+        "fi",
+        "",
+        "if [ ! -f $containerHomeDir/.local/share/lazygit_x86_64/lazygit ]; then",
+        "   cd /tmp &&",
+        "   curl -LO https://github.com/jesseduffield/lazygit/releases/download/v0.39.4/lazygit_0.39.4_Linux_x86_64.tar.gz",
+        "   tar xzf lazygit_0.39.4_Linux_x86_64.tar.gz",
+        "   mv lazygit $containerHomeDir/.local/share/lazygit_x86_64",
+        "fi",
+        "",
+        "chmod +x \"$containerHomeDir/.local/share/nvim-linux64/bin/nvim\" &&",
+        "chmod +x \"$containerHomeDir/.local/share/lazygit_x86_64/lazygit\" &&",
+        "",
+        "mkdir -p $containerHomeDir/.local/bin &&",
+        "cd /usr/bin/ &&",
+        "sudo ln -sf $containerHomeDir/.local/share/nvim-linux64/bin/nvim nvim",
+        "sudo ln -sf $containerHomeDir/.local/share/lazygit_x86_64/lazygit lazygit"
+    ],
+    "attachCommand": ["$containerHomeDir/.local/share/nvim-linux64/bin/nvim"]
+}';
+
+PrintInfo() {
+    local message=$1
+    echo -e "[${green}INFO${nc}] $message"
+}
+
+PrintCommand() {
+    local message=$1
+    local indentedMessage=$(echo -e "$message" | sed 's/^/    /')
+    echo -e "\n${comment}$indentedMessage${nc}\n"
+}
+
+PrintError() {
+    local message=$1
+    echo -e "[${red}ERROR${nc}] ${darkRed}$message${nc}"
+}
+
+Error() {
+    local message=$1
+    local finally=$2
+    PrintError "$message" ;
+    [[ -n "$finally" ]] && $finally
+    exit 1
+}
+
+ExpandVariables() {
+    local value="$1"
+    echo -e "$(source <(echo -e "echo \$\"$value\""))"
+}
+
+GetProfileValue() { 
+    local key="$1"
+    local value=$(echo -e "$profile" | jq -er ".${key}") && [[ "$value" == "null" ]] && Error "Failed to parse profile $key."
+    echo -e "$value"
+}
+
+
+ExecuteProfileCommand() {
+    local key="$1"
+    local profile_commands=$(GetProfileValue "$key")
+
+    if [ -n "$profile_commands" ]; then
+        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")') && [[ -z "$commands" ]] && Error "Failed to parse $key."
+        local expanded_commands=$(ExpandVariables "$commands")
+        PrintInfo "Executing profile command $key"
+        PrintCommand "$expanded_commands"
+        devcontainer exec --workspace-folder "$projectDir" "$expanded_commands" || PrintError "Executing $key failed." ; return 1
+    fi
+    return 0
+}
+
+
+CreateProfileVolumeArgs() {
+    # --mount   Additional mount point(s). Format: type=<bind|volume>,source=<source>,target=<target>[,external=<true|false>]   
+    local volumes=$(echo "$profile" | jq -r '.volumes[]' | tr '\n' ' ') && [[ -z "$volumes" ]] && Error "Failed to parse volumes."
+    local volumeArgs=""
+    for volume in $volumes; do
+        local hostDir=$(ExpandVariables "$volume" | awk -F':' '{print $1}')
+        local containerDir=$(ExpandVariables "$volume" | awk -F':' '{print $2}')
+        volumeArgs="$volumeArgs --mount type=bind,source=$hostDir,target=$containerDir"
+    done
+    echo -e "$volumeArgs"
+}
+
+CreateProfileVolumeDirs() {
+    local volumes=$(echo "$profile" | jq -r '.volumes[]' | tr '\n' ' ') && [[ -z "$volumes" ]] && Error "Failed to parse volumes."
+    for volume in $volumes; do
+        local volumeDir=$(ExpandVariables "$volume" | awk -F':' '{print $1}')
+        if [[ ! -d "$volumeDir" ]]; then
+            PrintInfo "Creating volume directory $volumeDir"
+            mkdir -p "$volumeDir"
+        fi
+    done
+}
+
+GetConfigValue() { 
+    local key="$1"
+    local value=$(echo -e "$devContainerConfigs" | jq -er ".${key}") && [[ "$value" == "null" ]] && Error "Failed to parse devcontainer config $key."
+    echo -e "$value"
+}
+
+StopContainerIfItHasNoPts() {
+    local containerId="$1"
+    local ptsCount=$(docker exec -it "$containerId" bash -c "ls /dev/pts | wc -l")
+    if [[ "$ptsCount" -eq 0 ]]; then
+        PrintInfo "Stopping container $containerId because it has no pts."
+        docker stop "$containerId"
+    fi
+}
+
+
+homeDirectory="$HOME"
+configDir="$homeDirectory/.config/devcontainer-use"
+mkdir -p "$configDir"
+
+# Project
+
+arg_ProjectDir=""
+for ((i = 2; i <= $#; i++)); do
+    arg_ProjectDir="$arg_ProjectDir ${!i}"
+done
+if [[ -n "$arg_ProjectDir" ]]; then
+    projectDir=$(realpath "$arg_ProjectDir")
+else
+    projectDir=$(realpath "$(pwd)")
+fi
+projectName=$(basename "$projectDir")
+
+PrintInfo "Project directory: $projectDir"
+
+# Profile
+
+profilesDir="$projectDir/profiles"
+mkdir -p "$profilesDir"
+if [[ ! -f "$profilesDir/$defaultProfileName.json" ]]; then
+    echo -e "$defaultProfile" >"$profilesDir/$defaultProfileName.json"
+fi
+arg_ProfileName=$1 && [[ -z "$arg_ProfileName" ]] && Error "No profile name specified. Available profiles: $(ls "$profilesDir" | sed 's/\.json//g' | tr '\n' ' ')"
+profileName="$arg_ProfileName"
+profilePath="$profilesDir/$profileName.json" && [[ ! -f "$profilePath" ]] && Error "Profile \"$profileName\" not found."
+profile=$(cat "$profilePath" | sed '/^\s*\/\/.*\|\/\*.*\*\/\s*$/d') && [[ -z "$profile" ]] && Error "Failed to read profile \"$profileName\"."
+
+PrintInfo "Profile: $profileName"
+
+# Devcontainer configs
+
+devContainerConfigs=$(devcontainer read-configuration --include-features-configuration true --include-merged-configuration true --workspace-folder "$projectDir")
+if [[ -z "$devContainerConfigs" ]]; then
+    Error "Failed to read devcontainer configuration."
+fi
+
+# All variables are ready at this point
+
+PrintInfo "Starting devcontainer for project \"$projectName\" with profile \"$profileName\""
+
+PrintCommand "$(ProfileVolumesAsDockerArgs)"
+CreateVolumeDirs
+containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(ProfileVolumesAsDockerArgs)) || Error "Failed to up devcontainer."
+containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
+PrintInfo "Container ID: \"$containerId\"."
+containerWorkdir=$(echo -e "$containerInfo" | jq -er '.remoteWorkspaceFolder') && [[ "$containerWorkdir" == "null" ]] && Error "Failed to parse container workdir."
+PrintInfo "Container workdir: \"$containerWorkdir\"."
+
+# When this script ends check if container has pts. If not, stop it.
+trap "StopContainerIfItHasNoPts $containerId" EXIT
+
+# Attach to the container
+
+PrintInfo "Attaching to the container \"$containerId\" project"
+
+AttachWithBash() {
+    PrintInfo "Attaching the container with bash"
+    devcontainer exec --workspace-folder "$projectDir" bash
+}
+
+AttachingError() {
+    Error "Attaching to the container failed." "AttachWithBash"
+}
+
+InstallError() {
+    Error "Installing profile to the container failed." "docker rm -f $containerId"
+}
+
+ExecuteProfileCommand "installCommand" || InstallError
+ExecuteProfileCommand "attachCommand" || AttachingError
