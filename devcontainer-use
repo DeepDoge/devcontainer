@@ -183,9 +183,9 @@ fi
 
 PrintInfo "Starting devcontainer for project \"$projectName\" with profile \"$profileName\""
 
-PrintCommand "$(ProfileVolumesAsDockerArgs)"
-CreateVolumeDirs
-containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(ProfileVolumesAsDockerArgs)) || Error "Failed to up devcontainer."
+PrintCommand "$(CreateProfileVolumeArgs)"
+CreateProfileVolumeDirs
+containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)) || Error "Failed to up devcontainer."
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: \"$containerId\"."
 containerWorkdir=$(echo -e "$containerInfo" | jq -er '.remoteWorkspaceFolder') && [[ "$containerWorkdir" == "null" ]] && Error "Failed to parse container workdir."
