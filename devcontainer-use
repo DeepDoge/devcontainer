@@ -206,18 +206,14 @@ trap "StopContainerIfItHasNoPts $containerId" EXIT
 
 PrintInfo "Attaching to the container \"$containerId\" project"
 
-AttachWithBash() {
-    PrintInfo "Attaching the container with bash"
-    devcontainer exec --workspace-folder "$projectDir" bash
-}
-
 AttachingError() {
     Error "Attaching to the container failed." "AttachWithBash"
 }
 
 InstallError() {
     trap "docker rm -f $containerId" EXIT
-    Error "Installing profile to the container failed." "AttachWithBash"
+    Error "Installing profile to the container failed.\nAttaching to the container with bash for debugging." \
+        "devcontainer exec --workspace-folder \"$projectDir\" bash"
 }
 
 ExecuteProfileCommand "installCommand" || InstallError
