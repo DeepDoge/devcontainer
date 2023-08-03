@@ -185,6 +185,7 @@ PrintInfo "Starting devcontainer for project \"$projectName\" with profile \"$pr
 
 PrintCommand "$(CreateProfileVolumeArgs)"
 CreateProfileVolumeDirs
+devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)
 containerInfo=$(devcontainer up --workspace-folder "$projectDir" $(CreateProfileVolumeArgs)) || Error "Failed to up devcontainer."
 containerId=$(echo -e "$containerInfo" | jq -er '.containerId') && [[ "$containerId" == "null" ]] && Error "Failed to parse container id."
 PrintInfo "Container ID: \"$containerId\"."
