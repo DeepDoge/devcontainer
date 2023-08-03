@@ -37,7 +37,7 @@ ExpandVariables() {
 
 GetProfileValue() { 
     local key="$1"
-    local value=$(echo -e "$profile" | jq -er ".${key}" || Error "Failed to parse $key.")
+    local value=$(echo -e "$profile" | jq -er ".${key}") && [[ "$value" == "null" ]] && Error "Failed to parse $key."
     echo -e "$value"
 }
 
@@ -47,7 +47,7 @@ ExecuteProfileCommand() {
     local profile_commands=$(GetProfileValue "$key")
 
     if [ -n "$profile_commands" ]; then
-        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")' || Error "Failed to parse $key.")
+        local commands=$(echo -e "$profile_commands" | jq -r 'join("\n")') && [[ -z "$commands" ]] && Error "Failed to parse $key."
         local expanded_commands=$(ExpandVariables "$commands")
         PrintInfo "Executing profile command $key..."
         PrintCommand "$expanded_commands"
@@ -62,12 +62,12 @@ ExecuteProfileCommand() {
 
 
 ProfileVolumesAsDockerArgs() {
-    local volumes=$(echo $(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' || Error "Failed to parse volumes.") | tr '\n' ' ')
+    local volumes=$(echo "$profile" | jq -r '.volumes[] | "-v \(.)"' | tr '\n' ' ') && [[ -z "$volumes" ]] && Error "Failed to parse volumes."
     ExpandVariables "$volumes"
 }
 
 CreateVolumeDirs() {
-    local volumeDirs=$(ExpandVariables $(echo "$profile" | jq -r '.volumes[] | split(":")[0] | .[0]' || Error "Failed to parse volumes."))
+    local volumeDirs=$(echo "$profile" | jq -r '.volumes[] | split(":")[0] | .[0]' | ExpandVariables) && [[ -z "$volumeDirs" ]] && Error "Failed to parse volumes."
     for volumeDir in $volumeDirs; do
         if [[ ! -d "$volumeDir" ]]; then
             PrintInfo "Creating directory $volumeDir"
