@@ -1,6 +1,6 @@
 #!/bin/bash
 
-green='\033[0;32m'
+green='\033[1;32m'
 darkRed='\033[0;31m'
 comment='\033[0;33m'
 red='\033[0;91m'
