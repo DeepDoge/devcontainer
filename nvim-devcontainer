@@ -3,7 +3,7 @@
 green='\033[0;32m'
 red='\033[0;31m'
 comment='\033[0;33m'
-red2='\033[0;91m'
+darkRed='\033[0;91m'
 nc='\033[0m'
 
 PrintInfo() {
@@ -19,13 +19,13 @@ PrintCommand() {
 
 PrintError() {
     local message=$1
-    echo -e "[${red}ERROR${nc}] ${red2}$message${nc}"
+    echo -e "[${red}ERROR${nc}] ${darkRed}$message${nc}" >&2
 }
 
 Panic() {
     local message=$1
     local beforeExit=$2
-    PrintError $"$message"
+    PrintError "$message"
     # [[ -n "$beforeExit" ]] && $beforeExit
     exit 1
 }
