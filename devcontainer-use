@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# TODO: We shouldn't use `devcontainers-cli` because it conflicts with VSCode's Dev Container extension.
+#       We should use `docker` instead.
+#       Only thing we might need devcontainer-cli might be for merging devcontainer confgurations.
+#       But we were already able to do that manually.
+#       So we should really reimplemnt this `devcontainers-cli`
+
 green='\033[1;32m'
 darkRed='\033[0;31m'
 comment='\033[0;33m'
@@ -16,7 +22,6 @@ defaultProfile='{
         "$configDir/nvim/local/share/nvim-linux64:$remoteUserHomeDir/.local/share/nvim-linux64",
         "$configDir/nvim/lazygit:$remoteUserHomeDir/.local/share/lazygit_x86_64"
     ],
-    "env": {},
     "installCommand": [
         "if [ ! -f $remoteUserHomeDir/.local/share/nvim-linux64/bin/nvim ]; then",
         "   cd /tmp &&",
@@ -230,7 +235,7 @@ trap "StopContainerIfItHasNoPts $containerId" EXIT
 PrintInfo "Attaching to the container $(String "$containerId") project"
 
 AttachingError() {
-    Error "Attaching to the container failed." "AttachWithBash"
+    Error "Attaching to the container failed." "devcontainer exec --workspace-folder=$(String "$projectDir") bash"
 }
 
 InstallError() {
